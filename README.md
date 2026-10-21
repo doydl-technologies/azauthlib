@@ -1,5 +1,9 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/doydl-technologies/azauthlib/main/assets/png/azauthlib-endorsed-lockup-light-989x308.png" alt="azauthlib" width="700">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/doydl-technologies/azauthlib/main/assets/png/azauthlib-endorsed-lockup-light-989x308.png">
+    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/doydl-technologies/azauthlib/main/assets/png/azauthlib-endorsed-lockup-dark-989x308.png">
+    <img src="https://raw.githubusercontent.com/doydl-technologies/azauthlib/main/assets/png/azauthlib-endorsed-lockup-dark-989x308.png" alt="azauthlib — powered by DOYDL Technologies" width="700">
+  </picture>
 </p>
 
 <p align="center">
@@ -13,7 +17,7 @@
   <a href="https://pepy.tech/project/azauthlib"><img src="https://static.pepy.tech/badge/azauthlib" alt="Downloads"></a>
   <a href="https://github.com/doydl-technologies/azauthlib/actions/workflows/ci.yml"><img src="https://github.com/doydl-technologies/azauthlib/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/doydl-technologies/azauthlib" alt="License"></a>
-  <a href="https://doydl.com"><img src="https://img.shields.io/badge/Powered%20by-DOYDL%20Technologies-blue" alt="Powered by DOYDL Technologies"></a>
+  <a href="https://doydl.studio"><img src="https://img.shields.io/badge/Powered%20by-DOYDL%20Technologies-blue" alt="Powered by DOYDL Technologies"></a>
 </p>
 
 ## Table of contents

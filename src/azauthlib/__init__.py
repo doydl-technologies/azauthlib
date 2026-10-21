@@ -24,7 +24,7 @@ from .authentication import Authentication, AuthenticationError, InteractionRequ
 from .profiles import Profile, active_profile, create_profile, list_profiles, select_profile
 from .tokens import TokenCacheSecurityError
 
-__version__ = "004.017.006"
+__version__ = "4.17.7"
 __all__ = [
     "Authentication",
     "AuthenticationError",

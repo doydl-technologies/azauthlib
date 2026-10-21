@@ -726,7 +726,7 @@ def configure_application_identity(app, resources: PackageResources) -> None:
     app.setApplicationName("azauthlib")
     app.setApplicationDisplayName(_APP_TITLE)
     app.setOrganizationName("DOYDL Technologies")
-    app.setOrganizationDomain("doydl.com")
+    app.setOrganizationDomain("doydl.studio")
     if sys.platform.startswith("linux"):
         app.setDesktopFileName("doydl-azauthlib")
     icon = QIcon(str(resources.path("assets", _TASKBAR_ICON_NAME)))
