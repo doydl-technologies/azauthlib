@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="azauthlib desktop application Terms of Use.">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+  <title>azauthlib Desktop App — Terms of Use</title>
+  <style>
+    :root { color-scheme: light; --ink: #152d4b; --muted: #50617a; --accent: #126b87; --line: #d6e1eb; --paper: #fff; --wash: #f1f5f9; }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; scroll-padding-top: 24px; }
+    body { margin: 0; color: var(--ink); background: var(--wash); font: 16px/1.7 system-ui, -apple-system, "Segoe UI", sans-serif; }
+    a { color: var(--accent); text-underline-offset: 3px; overflow-wrap: anywhere; }
+    a:hover { color: #094456; }
+    a:focus-visible { outline: 3px solid #167d9a; outline-offset: 4px; border-radius: 2px; }
+    .page { max-width: 1040px; margin: 40px auto; padding: 48px 56px; background: var(--paper); border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 12px 40px #152d4b0d; }
+    .eyebrow { margin: 0 0 8px; color: var(--accent); font-size: .8rem; font-weight: 750; letter-spacing: .12em; text-transform: uppercase; }
+    h1, h2, h3 { line-height: 1.3; color: var(--ink); }
+    h1 { margin: 0 0 16px; font-size: clamp(2rem, 5vw, 2.8rem); letter-spacing: -.035em; }
+    h2 { margin: 42px 0 14px; padding-top: 18px; border-top: 1px solid var(--line); font-size: 1.35rem; }
+    h3 { margin: 24px 0 8px; font-size: 1.05rem; }
+    p { margin: 0 0 16px; }
+    ul, ol { margin: 10px 0 20px; padding-left: 26px; }
+    li { margin: 7px 0; }
+    .subtitle, .metadata, footer { color: var(--muted); }
+    .metadata { margin: 20px 0; padding: 16px 20px; background: #f6f8fb; border-radius: 8px; font-size: .92rem; }
+    .metadata p { margin: 2px 0; }
+    .summary { margin: 24px 0; padding: 20px 24px; background: #ecf7fa; border: 1px solid #b8dce5; border-left: 5px solid var(--accent); border-radius: 8px; }
+    nav { margin: 30px 0; padding: 22px 26px; background: #f6f8fb; border: 1px solid var(--line); border-radius: 10px; }
+    nav h2 { margin: 0 0 12px; padding: 0; border: 0; font-size: 1.1rem; }
+    nav ol { columns: 2; column-gap: 40px; margin-bottom: 0; }
+    nav li { break-inside: avoid; font-size: .93rem; }
+    code { padding: 2px 5px; background: #edf2f7; border-radius: 4px; font-size: .9em; overflow-wrap: anywhere; }
+    .contact { padding: 20px 24px; background: #f6f8fb; border: 1px solid var(--line); border-radius: 8px; }
+    .contact p { margin: 4px 0; }
+    footer { margin-top: 36px; padding-top: 22px; border-top: 1px solid var(--line); font-size: .85rem; }
+    @media (max-width: 680px) { .page { margin: 0; padding: 30px 22px; border: 0; border-radius: 0; } nav ol { columns: 1; } .summary, nav { padding: 18px; } }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+    @media print { body { background: white; font-size: 10.5pt; } .page { max-width: none; margin: 0; padding: 0; border: 0; border-radius: 0; box-shadow: none; } a { color: inherit; } h2, h3 { break-after: avoid; } .summary, .contact { break-inside: avoid; } nav ol { columns: 2; } }
+  </style>
+</head>
+<body>
+  <main class="page" id="top">
+    <header>
+      <p class="eyebrow">DOYDL Technologies · azauthlib Desktop Application</p>
+      <h1>Terms of Use</h1>
+      <p class="subtitle">Desktop-specific conditions, responsibilities, and notices for configuring and testing Microsoft identity connections.</p>
+      <div class="metadata" id="policy-metadata">
+        <!-- <p><strong>Policy version:</strong> 1.0</p> -->
+        <p><strong>Effective date:</strong> <time datetime="2026-10-16">October 16, 2026</time></p>
+        <!-- <p><strong>Publisher:</strong> DOYDL Technologies ("DOYDL," "we," "us," or "our")</p> -->
+        <p><strong>Publisher:</strong> DOYDL Technologies</p>
+        <p><strong>Companion document:</strong> <a href="DESKTOP_APP_PRIVACY_POLICY.html">Desktop App Privacy Policy</a></p>
+      </div>
+    </header>
+
+    <aside class="summary" aria-label="Important points">
+      <p><strong>The important points:</strong> azauthlib is an independent desktop configuration and authentication-testing tool, not a Microsoft product. You control your tenants, app registrations, credentials, and permissions. A successful test confirms token issuance, not the safety or completeness of every downstream operation. Your open-source rights remain governed by the applicable software licenses.</p>
+    </aside>
+
+    <nav aria-label="Contents">
+      <h2>Contents</h2>
+      <ol>
+        <li><a href="#scope">Scope and document priority</a></li>
+        <li><a href="#acceptance">Acceptance and eligibility</a></li>
+        <li><a href="#functionality">What the application does</a></li>
+        <li><a href="#authorization">Your authority and permissions</a></li>
+        <li><a href="#credentials">Credentials and sign-in</a></li>
+        <li><a href="#use">Responsible use</a></li>
+        <li><a href="#local-data">Local data and removal</a></li>
+        <li><a href="#security">Security responsibilities</a></li>
+        <li><a href="#third-parties">Third-party services</a></li>
+        <li><a href="#intellectual-property">Licenses and branding</a></li>
+        <li><a href="#updates">Updates and changes</a></li>
+        <li><a href="#support">Support and preview features</a></li>
+        <li><a href="#fees">Costs and separate services</a></li>
+        <li><a href="#warranties">Warranties and suitability</a></li>
+        <li><a href="#liability">Liability and protected rights</a></li>
+        <li><a href="#privacy">Privacy and communications</a></li>
+        <li><a href="#termination">Stopping use and termination</a></li>
+        <li><a href="#international">International use</a></li>
+        <li><a href="#disputes">Disputes and general provisions</a></li>
+        <li><a href="#contact">Contact information</a></li>
+      </ol>
+    </nav>
+
+    <article id="terms" aria-label="azauthlib desktop application terms">
+      <section id="scope">
+        <h2>1. Scope and document priority</h2>
+        <p>These Terms of Use ("Terms") describe the conditions applicable to the azauthlib desktop application's user interface, connection-management features, optional online functions, and associated DOYDL-provided documentation (together, the "App"). References to "you" include an individual using the App and, where that individual has authority to act for an organization, that organization.</p>
+        <p>The underlying azauthlib software is distributed under the <a href="https://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>, as identified in the release's <code>LICENSE</code> file. Third-party components have their own licenses. <strong>These Terms do not replace, narrow, revoke, or add conditions to rights granted by those licenses.</strong> If a provision conflicts with an applicable open-source license concerning the licensed code, that license controls.</p>
+        <p>These Terms do not govern Microsoft services, GitHub, another publisher's application, or an organization's use of the Python library inside its own product. Those services and implementations may have separate agreements and notices. The App's <a href="DESKTOP_APP_PRIVACY_POLICY.html">Privacy Policy</a> describes information handling; it is not a blanket consent to unrelated processing.</p>
+        <p>A separate, signed agreement with DOYDL controls the services it expressly covers. No separate enterprise hosting, data-processing, support, or service-level agreement is created by installing this App.</p>
+      </section>
+
+      <section id="acceptance">
+        <h2>2. Acceptance and eligibility</h2>
+        <p>To the extent these Terms establish contractual obligations beyond applicable software licenses, they apply only where the necessary notice and acceptance requirements of applicable law are satisfied. Displaying a footer link or opening a notice is not represented as proof of enforceable contractual acceptance. Your rights under applicable open-source licenses do not depend on accepting additional restrictions in these Terms.</p>
+        <p>You must have the legal capacity and necessary authority to undertake the activities you perform. The App is intended for developers, administrators, and other authorized users. If you act for an employer, customer, tenant owner, or other organization, confirm that its policies permit the installation, authentication method, and requested permissions.</p>
+        <p>If you do not accept conditions lawfully applicable to a separate DOYDL-operated online feature, do not use that feature. Your rights to obtain, use, examine, modify, and redistribute open-source software remain governed by its license.</p>
+      </section>
+
+      <section id="functionality">
+        <h2>3. What the application does</h2>
+        <p>The App helps you create, view, edit, select, and remove local connection profiles, store configuration values, and optionally test authentication through Microsoft identity services. Supported desktop flows include interactive browser sign-in, device-code sign-in, and client-credentials authentication, subject to the release and your Microsoft app registration.</p>
+        <p>In the implementation described in this Policy, Microsoft Graph is the enabled provider destination. Other provider cards may be visible and selectable for illustration or future development while their Continue action is unavailable. A displayed logo, provider card, feature label, or roadmap item is not a promise of current functionality or a commitment to a release date.</p>
+        <p>A connection test attempts to obtain a token for the configured identity and scopes. A "passed" result does not establish that every Graph permission is available, that consent is appropriate, that the account may access every resource, or that a subsequent API operation will succeed. The current desktop test does not enumerate your mail, files, contacts, or directory records to prove those capabilities.</p>
+        <p>The App is not a managed identity provider, a replacement for Microsoft Entra administration, a credential-recovery service, an audit, or a compliance certification. Unless separately agreed, DOYDL does not administer your tenant, monitor your credentials, or operate your downstream workloads.</p>
+      </section>
+
+      <section id="authorization">
+        <h2>4. Your authority and permissions</h2>
+        <p>You are responsible for ensuring you are permitted to use each account, tenant, application registration, secret, and resource you configure. Possessing an identifier or a secret is not, by itself, evidence of authorization. Do not test another person's or organization's configuration without appropriate permission.</p>
+        <ul>
+          <li>Choose delegated or application permissions that are necessary for the intended task; avoid granting broad permissions solely to make a test pass.</li>
+          <li>Obtain required user consent or tenant-administrator consent through approved Microsoft and organizational processes.</li>
+          <li>Comply with your employer's access-control, device-management, data-handling, and change-management requirements.</li>
+          <li>Use separate development and production registrations where appropriate, and verify the selected profile before testing or using it elsewhere.</li>
+          <li>Do not misrepresent your authority, the App's capabilities, or a test result to another person.</li>
+        </ul>
+        <p>Where another program uses configuration produced by the App, that program's operator is responsible for its API requests, handling of returned information, retention practices, and notices to affected individuals.</p>
+      </section>
+
+      <section id="credentials">
+        <h2>5. Credentials, browser sign-in, and device codes</h2>
+        <p>Tenant IDs and client IDs are stored as configuration values; client secrets entered for storage are submitted to the configured operating-system credential backend. Secrets may be shared by profiles that use the same client ID. Review backend settings on shared, managed, or non-Windows devices; the App does not create an isolated hardware security boundary around every stored value.</p>
+        <p>Interactive sign-in normally opens a browser and may use a local loopback redirect. Device-code sign-in shows a short-lived code and verification address. Enter codes only at the intended Microsoft sign-in destination and only when you initiated the operation. Never accept a code from an untrusted person claiming to provide support.</p>
+        <p>Microsoft may request a password, multifactor authentication, conditional-access checks, account selection, or consent. Those interactions are governed by Microsoft and your organization. The App's own form is not intended to collect your Microsoft account password.</p>
+        <p>Do not disclose client secrets, access or refresh tokens, device codes, private keys, browser session data, or unredacted configuration files in support requests, public issues, recordings, or screenshots. If a credential is exposed, stop affected activity and rotate or revoke it through the issuing service. Removing a profile does not perform that revocation.</p>
+      </section>
+
+      <section id="use">
+        <h2>6. Responsible use</h2>
+        <p>Use the App and any related online service lawfully and within your authorization. In particular, do not use it to steal credentials, impersonate another person, evade authentication or organizational controls, obtain access without permission, introduce malicious code into another system, or deliberately disrupt a third-party service.</p>
+        <p>Do not submit information that you are not entitled to disclose, including a customer's confidential information or another person's personal data. Do not present modified or redistributed software as an official DOYDL or Microsoft release when it is not.</p>
+        <p>These responsibilities are not intended to prohibit lawful security research, independent testing of systems you are authorized to test, interoperability work, examination of source code, reverse engineering permitted by law, or other conduct authorized by the applicable open-source license. No broader restriction on licensed software rights should be inferred.</p>
+      </section>
+
+      <section id="local-data">
+        <h2>7. Local data, backups, and removal</h2>
+        <p>Profiles, public configuration, display preferences, and saved test outcomes are maintained in application data on your device. Local configuration files are not all encrypted merely because secrets or token caches use operating-system protection. Backups, synchronization tools, endpoint agents, and other software with access to your device may make additional copies.</p>
+        <p><strong>Remove connection is not a secure-erasure command.</strong> The current removal workflow removes the active registry entry and associated saved outcome, recoverably archives known configuration/cache files in <code>removed-profiles</code>, and keeps OS-stored secrets because another profile may share them. Files not known to that workflow and copies outside application storage may remain.</p>
+        <p>Uninstalling the App is not represented as deleting all application data, archives, browser sessions, keyring entries, or backup copies. For complete cleanup, review the Privacy Policy's removal guidance, confirm dependencies before deleting a shared secret, and revoke credentials or consent through Microsoft where necessary.</p>
+        <p>You are responsible for your backup and recovery arrangements. DOYDL does not receive an automatic backup of your local connection profiles and cannot remotely restore data that exists only on your device.</p>
+      </section>
+
+      <section id="security">
+        <h2>8. Security responsibilities</h2>
+        <p>Protect the operating-system account that runs the App. Use appropriate disk encryption, current security updates, trusted software sources, least-privilege access, and organizational endpoint controls. Do not assume encryption at rest prevents access by an unlocked session, malware, an administrator, or a compromised dependency.</p>
+        <p>The desktop test uses a temporary in-memory token cache. The separate Python library may persist tokens, normally using operating-system-backed encryption; explicit plaintext-cache configuration is possible for library callers. Review the mode actually used by your integration rather than relying on a single statement about all azauthlib deployments.</p>
+        <p>No software or security measure is infallible. Authentication errors, expired secrets, policy changes, network interception by a managed proxy, operating-system behavior, and dependency vulnerabilities can affect operation. A successful test is not evidence that a system is free from security defects.</p>
+        <p>Report a suspected vulnerability using the repository's private vulnerability reporting channel described in <a href="https://github.com/doydl-technologies/azauthlib/blob/main/SECURITY.md">SECURITY.md</a>. Do not post live credentials or sensitive exploit details in a public issue. Where a report involves an active compromise, also notify the relevant tenant or system administrator.</p>
+      </section>
+
+      <section id="third-parties">
+        <h2>9. Third-party services and Microsoft independence</h2>
+        <p>azauthlib is independently developed and maintained by DOYDL. It is not an official Microsoft product and is not affiliated with, sponsored by, endorsed by, certified by, or supported by Microsoft merely because it uses Microsoft technologies or displays their identifying names and logos.</p>
+        <p>Microsoft controls its identity platform, tokens, account requirements, service availability, permission models, policies, charges, and agreements. GitHub and other distribution or support providers control their platforms. DOYDL cannot grant rights in another provider's service, override an administrator's decision, or guarantee continuing compatibility.</p>
+        <p>Opening a website, following a repository link, or signing in through a browser can subject you to the destination's terms and privacy practices. Normal network, browser, and provider processing may occur even when the App does not send your saved profile to DOYDL.</p>
+        <p>Third-party libraries, fonts, icons, logos, and other components remain subject to their applicable licenses and notices. Review the notices included with your distribution. A component's presence does not establish that its author has reviewed or approved the App.</p>
+      </section>
+
+      <section id="intellectual-property">
+        <h2>10. Software licenses, branding, and feedback</h2>
+        <p>Obtain software permissions from the applicable license files. Preserve required notices when redistributing, identify modifications as required, and do not assume software permissions include rights to another party's trademarks. These Terms do not impose a separate fee, field-of-use restriction, or reverse-engineering ban on code licensed under Apache 2.0.</p>
+        <p>DOYDL and the relevant rights holders retain their respective names, logos, documentation, and other protected interests, subject to licenses they actually grant and rights provided by law. References to Microsoft products identify compatibility; they do not grant Microsoft branding rights or permission to suggest a partnership.</p>
+        <p>You do not transfer ownership of your configuration or personal information merely by using the App. If you intentionally contribute code or documentation, the repository's contribution rules and applicable license govern that contribution. Ordinary support questions or private personal information are not treated by this document as an unrestricted intellectual-property assignment.</p>
+      </section>
+
+      <section id="updates">
+        <h2>11. Updates, compatibility, and changes</h2>
+        <p>New releases may fix defects, change dependencies, alter file formats, or add or remove interface features. Review release notes and maintain backups before an upgrade, particularly when another program uses the same credentials or profile data. An old release may stop working with a changing identity service.</p>
+        <p>The current App is not represented as offering a guaranteed automatic-update service, a guaranteed support period, or a remote administration service. Future network, telemetry, update, or data-collection functions require their own accurate disclosures and any permissions or acceptance required by law; a general reference to future releases is not consent to those functions.</p>
+        <p>DOYDL may change or discontinue an optional DOYDL-operated resource, subject to applicable commitments and law. That does not remotely revoke rights already granted in released open-source code, erase your installation, or authorize access to your local files.</p>
+      </section>
+
+      <section id="support">
+        <h2>12. Support, documentation, and preview features</h2>
+        <p>Unless a separate written agreement states otherwise, no service-level target, response time, uptime commitment, professional service, custom development, or ongoing maintenance obligation is created by these Terms. A published security reporting policy may describe a separate reporting process.</p>
+        <p>Examples, tutorials, status messages, and recommendations are informational. Validate them against the release you use, your tenant configuration, current provider documentation, and your organization's policies. A demonstration profile, simulated test, preview animation, or development launcher must not be mistaken for a real authenticated connection.</p>
+        <p>Preview and experimental features may be incomplete or change without becoming generally available. Do not rely on a feature for critical operations solely because it appears in an interface mockup, screenshot, provider selector, or future-facing description.</p>
+      </section>
+
+      <section id="fees">
+        <h2>13. Costs and separate services</h2>
+        <p>The desktop implementation described in this Policy does not contain an in-app purchase or billing flow. This statement is not a commitment that every future DOYDL service will be free. Any separately charged offering requires clear pricing and separate applicable terms before purchase.</p>
+        <p>You remain responsible for internet access, Microsoft subscriptions, tenant licensing, provider API or resource charges, and other third-party costs you incur. A token or successful test does not establish that the associated services are included in your subscriptions or free of charge.</p>
+      </section>
+
+      <section id="warranties">
+        <h2>14. Warranties, suitability, and critical systems</h2>
+        <p>The warranties and disclaimers applicable to open-source code are those in its governing license. Nothing here adds a promise that every release will be error-free, continuously available, compatible with every environment, or suitable for a particular regulated workflow.</p>
+        <p>Assess the App before relying on it for production access or sensitive operations. It is not designed or represented as a life-safety control, emergency-response system, certification service, or substitute for independent security and compliance review.</p>
+        <p>Descriptions of intended safeguards are not guarantees against credential theft, data loss, unauthorized access, or interrupted service. Any express warranty in a separately binding agreement remains governed by that agreement. Mandatory warranties, remedies, and consumer protections that cannot lawfully be excluded remain unaffected.</p>
+      </section>
+
+      <section id="liability">
+        <h2>15. Liability and rights that cannot be excluded</h2>
+        <p>Liability concerning licensed open-source software is addressed by its applicable license. For a separate service or contractual obligation, liability depends on the agreement actually formed and the law that applies. These Terms do not introduce an additional monetary liability cap, indemnity, or waiver of statutory remedies.</p>
+        <p>Nothing in these Terms is intended to exclude or limit liability where doing so is prohibited, including liability for fraud, intentional misconduct, gross negligence, death or personal injury, or another protected category to the extent the applicable law prevents its exclusion or limitation. The existence and scope of those protections depend on the relevant law.</p>
+        <p>Responsibility for your own authorized configuration and credential decisions does not excuse DOYDL from obligations it actually owes. A disclaimer of Microsoft affiliation does not disclaim Microsoft's independent obligations under its agreements with you.</p>
+      </section>
+
+      <section id="privacy">
+        <h2>16. Privacy, support submissions, and communications</h2>
+        <p>Read the <a href="DESKTOP_APP_PRIVACY_POLICY.html">Desktop App Privacy Policy</a> for local storage, authentication traffic, test outcomes, clipboard use, removal limitations, and information you choose to send for support.</p>
+        <p>Terms and Privacy documents are bundled with the App and read locally; startup does not fetch them from doydl.studio. Opening a bundled document does not require a website request. Authentication tests and external links you choose to use may involve internet traffic and the destination's own practices.</p>
+        <p>Send only information needed to explain an issue. Public repository submissions can be copied and indexed by others; deleting a post may not remove every copy. These Terms do not authorize marketing subscriptions, remote collection of your credentials, or use of personal information for a purpose requiring separate consent.</p>
+      </section>
+
+      <section id="termination">
+        <h2>17. Stopping use and termination</h2>
+        <p>You may stop using the App at any time. Cancel pending tests, close the App, and follow the cleanup guidance if you want to remove local records. Ending use does not automatically revoke credentials, remove Microsoft consent, sign out all browser sessions, or erase third-party audit logs.</p>
+        <p>Where lawful, DOYDL may restrict access to a DOYDL-operated optional service in response to abuse, a security risk, a legal requirement, or the end of that service, subject to any applicable notice, remedy, and contractual obligations. That is distinct from the availability of source code or your rights under an open-source license.</p>
+        <p>Any termination of license rights must follow the applicable license, not an additional termination rule imposed by these Terms. Provisions that are intended by their nature to continue, such as license priority and protected legal rights, continue only to the extent lawfully applicable.</p>
+      </section>
+
+      <section id="international">
+        <h2>18. International use and organizational restrictions</h2>
+        <p>You are responsible for assessing whether you may lawfully download and use the App and access the configured services in your location, including applicable export-control, sanctions, and organizational restrictions. Nothing in these Terms requires conduct prohibited by law or purports to grant a government authorization.</p>
+        <p>International use may involve authentication or website infrastructure outside your country. Review the Privacy Policy and your providers' arrangements. The App is not a guarantee of data residency, a transfer agreement, or a substitute for an organization's legal assessment.</p>
+      </section>
+
+      <section id="disputes">
+        <h2>19. Disputes, changes to these Terms, and general provisions</h2>
+        <p><strong>Governing law and forum:</strong> these Terms do not designate an exclusive jurisdiction. Applicable conflict-of-law and jurisdiction rules determine the relevant law and forum. Nothing removes a consumer's mandatory local protections or access to a competent regulator or court.</p>
+        <p><strong>No arbitration or class-action waiver:</strong> these Terms do not require arbitration, waive a jury trial, bar collective proceedings, or impose a shortened period for bringing a claim. Contacting DOYDL to discuss a concern does not suspend a filing deadline unless the law or a separate agreement says it does.</p>
+        <p><strong>Changes:</strong> revisions identify their effective date. Material changes require appropriate notice and any acceptance required by applicable law. Changes are prospective and cannot retroactively change an open-source license grant, silently authorize new processing, or erase accrued mandatory rights. The policy bundled with an installed release does not silently refresh from a website.</p>
+        <p><strong>Severability and waiver:</strong> if an applicable term cannot lawfully be enforced, the remainder applies only so far as it can operate lawfully without that term. A failure to enforce a provision on one occasion is not a general waiver. No clause authorizes a court or DOYDL to rewrite the governing open-source license.</p>
+        <p><strong>Relationship and language:</strong> using the App does not create employment, agency, partnership, a fiduciary relationship, or authority to bind Microsoft. This version is written in English. Mandatory language and consumer-protection rules take priority over any conflicting convenience translation.</p>
+      </section>
+
+      <section id="contact">
+        <h2>20. Contact information</h2>
+        <div class="contact">
+          <p><strong>Publisher:</strong> DOYDL Technologies</p>
+          <p><strong>Legal inquiries:</strong> <a href="mailto:legal@doydl.studio">legal@doydl.studio</a></p>
+          <p><strong>Privacy inquiries:</strong> <a href="mailto:privacy@doydl.studio">privacy@doydl.studio</a></p>
+          <p><strong>Business mailing address:</strong> DOYDL Technologies, 11166 Fairfax Blvd, Suite 500 #1378, Fairfax, VA 22030, United States</p>
+          <p><strong>Website:</strong> <a href="https://doydl.studio/">doydl.studio</a></p>
+          <p><strong>Repository:</strong> <a href="https://github.com/doydl-technologies/azauthlib">doydl-technologies/azauthlib</a></p>
+          <p><strong>Non-sensitive bugs:</strong> <a href="https://github.com/doydl-technologies/azauthlib/issues">Repository issues</a></p>
+          <p><strong>Security reports:</strong> follow <a href="https://github.com/doydl-technologies/azauthlib/blob/main/SECURITY.md">the private reporting instructions in SECURITY.md</a>; do not publish secrets.</p>
+        </div>
+      </section>
+    </article>
+
+    <footer>
+      <p>azauthlib desktop application · DOYDL Technologies · Effective October 16, 2026</p>
+      <p><a href="#top">Back to top</a> · <a href="DESKTOP_APP_PRIVACY_POLICY.html">Desktop App Privacy Policy</a> · <a href="https://www.apache.org/licenses/LICENSE-2.0">Apache License 2.0</a></p>
+    </footer>
+  </main>
+</body>
+</html>

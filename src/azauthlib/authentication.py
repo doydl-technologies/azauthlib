@@ -1,47 +1,21 @@
 # -*- coding: utf-8 -*-
 
 #
-# doydl's Microsoft Identity Authentication Library — azauthlib
+# DOYDL's Microsoft Identity Authentication Library — azauthlib
 #
-# The `azauthlib` module is a secure authentication library for acquiring, caching, and
-# refreshing Microsoft identity platform tokens across public and confidential client
-# applications — built on MSAL for Python and MSAL Extensions.
+# Copyright 2024 DOYDL Technologies.
 #
-# Designed for predictable credential handling, `azauthlib` supports interactive, silent,
-# device-code, and client-credentials flows — separating delegated scopes from application
-# scopes and returning explicit authentication results and typed failures.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-# The library combines exact-path configuration loading, OS-backed secret storage, and
-# encrypted, cross-process-safe token persistence to support Microsoft Graph clients,
-# automation services, and desktop applications.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# It avoids import-time filesystem side effects, fails closed when secure cache persistence
-# is unavailable, and normalizes application data paths consistently across Windows, macOS,
-# and Linux.
-#
-# Whether embedded in command-line tools, desktop applications, background services, or data
-# pipelines, `azauthlib` provides a focused security boundary around Microsoft identity
-# configuration and token acquisition.
-#
-# Copyright (c) 2024 by doydl technologies. All rights reserved.
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the “Software”), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 #
 
 """Microsoft identity platform authentication built on MSAL."""
@@ -100,7 +74,12 @@ class _CredentialBuilder:
         credentials = load_credentials(self.auth.default_env_path)
         if authority:
             credentials["authority"] = authority
-        return self.WithEntry(**credentials)
+        return self.WithEntry(
+            client_id=credentials["client_id"],
+            tenant_id=credentials["tenant_id"],
+            client_secret=credentials.get("client_secret"),
+            authority=credentials.get("authority"),
+        )
 
     def WithEntry(self, client_id, tenant_id, client_secret=None, authority=None):
         if not client_id or not tenant_id:
@@ -168,8 +147,16 @@ class Authentication:
     ``allow_plaintext_cache=True`` only after making an explicit risk decision.
     """
 
-    def __init__(self, scopes=None, token_path=None, *, allow_plaintext_cache: bool = False):
-        settings = get_settings()
+    def __init__(
+        self,
+        scopes=None,
+        token_path=None,
+        *,
+        profile=None,
+        allow_plaintext_cache: bool = False,
+    ):
+        settings = get_settings(profile)
+        self.profile = profile
         self.client_id: str | None = None
         self.tenant_id: str | None = None
         self.client_secret: str | None = None

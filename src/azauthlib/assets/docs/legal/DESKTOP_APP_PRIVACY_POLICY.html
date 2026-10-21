@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="azauthlib desktop application Privacy Policy.">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+  <title>azauthlib Desktop App — Privacy Policy</title>
+  <style>
+    :root { color-scheme: light; --ink: #152d4b; --muted: #50617a; --accent: #126b87; --line: #d6e1eb; --paper: #fff; --wash: #f1f5f9; }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; scroll-padding-top: 24px; }
+    body { margin: 0; color: var(--ink); background: var(--wash); font: 16px/1.7 system-ui, -apple-system, "Segoe UI", sans-serif; }
+    a { color: var(--accent); text-underline-offset: 3px; overflow-wrap: anywhere; }
+    a:hover { color: #094456; }
+    a:focus-visible { outline: 3px solid #167d9a; outline-offset: 4px; border-radius: 2px; }
+    .page { max-width: 1040px; margin: 40px auto; padding: 48px 56px; background: var(--paper); border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 12px 40px #152d4b0d; }
+    .eyebrow { margin: 0 0 8px; color: var(--accent); font-size: .8rem; font-weight: 750; letter-spacing: .12em; text-transform: uppercase; }
+    h1, h2, h3 { line-height: 1.3; color: var(--ink); }
+    h1 { margin: 0 0 16px; font-size: clamp(2rem, 5vw, 2.8rem); letter-spacing: -.035em; }
+    h2 { margin: 42px 0 14px; padding-top: 18px; border-top: 1px solid var(--line); font-size: 1.35rem; }
+    h3 { margin: 24px 0 8px; font-size: 1.05rem; }
+    p { margin: 0 0 16px; }
+    ul, ol { margin: 10px 0 20px; padding-left: 26px; }
+    li { margin: 7px 0; }
+    .subtitle, .metadata, footer { color: var(--muted); }
+    .metadata { margin: 20px 0; padding: 16px 20px; background: #f6f8fb; border-radius: 8px; font-size: .92rem; }
+    .metadata p { margin: 2px 0; }
+    .summary { margin: 24px 0; padding: 20px 24px; background: #ecf7fa; border: 1px solid #b8dce5; border-left: 5px solid var(--accent); border-radius: 8px; }
+    nav { margin: 30px 0; padding: 22px 26px; background: #f6f8fb; border: 1px solid var(--line); border-radius: 10px; }
+    nav h2 { margin: 0 0 12px; padding: 0; border: 0; font-size: 1.1rem; }
+    nav ol { columns: 2; column-gap: 40px; margin-bottom: 0; }
+    nav li { break-inside: avoid; font-size: .93rem; }
+    code { padding: 2px 5px; background: #edf2f7; border-radius: 4px; font-size: .9em; overflow-wrap: anywhere; }
+    .table-wrap { overflow-x: auto; margin: 18px 0 24px; border: 1px solid var(--line); border-radius: 8px; }
+    table { width: 100%; border-collapse: collapse; font-size: .91rem; }
+    caption { padding: 12px 16px; text-align: left; color: var(--muted); background: #f6f8fb; font-weight: 650; }
+    th, td { padding: 14px 16px; vertical-align: top; text-align: left; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
+    thead th { background: #eaf1f7; color: var(--ink); }
+    tbody th { width: 23%; font-weight: 650; }
+    tbody tr:last-child th, tbody tr:last-child td { border-bottom: 0; }
+    .contact { padding: 20px 24px; background: #f6f8fb; border: 1px solid var(--line); border-radius: 8px; }
+    .contact p { margin: 4px 0; }
+    footer { margin-top: 36px; padding-top: 22px; border-top: 1px solid var(--line); font-size: .85rem; }
+    @media (max-width: 680px) { .page { margin: 0; padding: 30px 22px; border: 0; border-radius: 0; } nav ol { columns: 1; } .summary, nav { padding: 18px; } th, td { padding: 10px; } }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+    @media print { body { background: white; font-size: 10.5pt; } .page { max-width: none; margin: 0; padding: 0; border: 0; border-radius: 0; box-shadow: none; } a { color: inherit; } h2, h3 { break-after: avoid; } .summary, .contact { break-inside: avoid; } .table-wrap { overflow: visible; } tr { break-inside: avoid; } thead { display: table-header-group; } nav ol { columns: 2; } }
+  </style>
+</head>
+<body>
+  <main class="page" id="top">
+    <header>
+      <p class="eyebrow">DOYDL Technologies · azauthlib Desktop Application</p>
+      <h1>Privacy Policy</h1>
+      <p class="subtitle">How the desktop app handles connection profiles, credentials, authentication, local records, and optional online interactions.</p>
+      <div class="metadata" id="policy-metadata">
+        <!-- <p><strong>Policy version:</strong> 1.0</p> -->
+        <p><strong>Effective date:</strong> <time datetime="2026-10-16">October 16, 2026</time></p>
+        <!-- <p><strong>Publisher:</strong> DOYDL Technologies ("DOYDL," "we," "us," or "our")</p> -->
+        <p><strong>Publisher:</strong> DOYDL Technologies</p>
+        <p><strong>Companion document:</strong> <a href="DESKTOP_APP_TERMS_OF_USE.html">Desktop App Terms of Use</a></p>
+      </div>
+    </header>
+
+    <aside class="summary" aria-label="Privacy at a glance">
+      <p><strong>Privacy at a glance:</strong> connection profiles are local; client secrets use the configured OS credential backend; desktop tests obtain tokens directly from Microsoft using a temporary memory cache. Terms and Privacy text is bundled and loaded locally, without a startup website request. Removing a profile archives files and keeps shared secrets; it is not complete erasure or credential revocation.</p>
+    </aside>
+
+    <nav aria-label="Contents">
+      <h2>Contents</h2>
+      <ol>
+        <li><a href="#scope">Scope and privacy roles</a></li>
+        <li><a href="#inventory">Information the App handles</a></li>
+        <li><a href="#sources">Where information comes from</a></li>
+        <li><a href="#network">Network requests and recipients</a></li>
+        <li><a href="#storage">Local storage and credential protection</a></li>
+        <li><a href="#tokens">Authentication and tokens</a></li>
+        <li><a href="#clipboard">Clipboard, browser, and device exposure</a></li>
+        <li><a href="#tracking">Analytics, advertising, and tracking</a></li>
+        <li><a href="#purposes">Purposes and legal bases</a></li>
+        <li><a href="#sharing">Disclosure and third-party roles</a></li>
+        <li><a href="#retention">Retention and archives</a></li>
+        <li><a href="#removal">Removal, uninstalling, and revocation</a></li>
+        <li><a href="#choices">Your choices and controls</a></li>
+        <li><a href="#rights">Privacy rights and requests</a></li>
+        <li><a href="#international">International processing</a></li>
+        <li><a href="#security">Security and incident reports</a></li>
+        <li><a href="#children">Children and sensitive information</a></li>
+        <li><a href="#changes">Changes and implementation limits</a></li>
+        <li><a href="#contact">Contact information</a></li>
+      </ol>
+    </nav>
+
+    <article id="privacy" aria-label="azauthlib desktop application privacy policy">
+      <section id="scope">
+        <h2>1. Scope and privacy roles</h2>
+        <p>This Policy describes the standard azauthlib desktop application developed by DOYDL and the interactions it initiates. "Personal information" includes information that identifies or can reasonably be linked to a person, household, or device under applicable law. An identifier that is not a password may still be sensitive organizational information or become personal information when combined with other records.</p>
+        <p><strong>Local processing is not the same as receipt by DOYDL.</strong> The App can handle profiles and secrets on your device without uploading those values to DOYDL. DOYDL does not acquire remote access to your files merely by publishing the App. Information you choose to send to support may be received by DOYDL and the communication providers involved.</p>
+        <p>Where DOYDL determines why and how information it actually receives is processed, it may act as a controller or equivalent responsible business. Where your employer or another organization determines how the App is deployed and how tenant information is used, that organization has its own obligations and may be the appropriate contact for your request. A software license alone does not establish a hosted processing service or a data-processing agreement.</p>
+        <p>Microsoft administers its identity services and account/tenant processing under the relevant Microsoft and organizational arrangements. GitHub, your browser, your operating system, and other destinations have separate practices. A modified build or another program embedding the azauthlib Python library may behave differently and needs its own accurate notice.</p>
+      </section>
+
+      <section id="inventory">
+        <h2>2. Information the App handles</h2>
+        <div class="table-wrap" role="region" aria-label="Information inventory" tabindex="0">
+          <table>
+            <caption>Technical inventory of the desktop implementation described in this Policy</caption>
+            <thead><tr><th scope="col">Category</th><th scope="col">Examples and purpose</th><th scope="col">Usual handling</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">Profile and configuration data</th><td>Connection name, local profile ID, selected profile, tenant/directory ID, client/application ID, authentication method, and an authority value where configured.</td><td>Stored locally to display and reuse connections. Loading the bundled policies does not transmit these values.</td></tr>
+              <tr><th scope="row">Client secrets</th><td>A secret value you enter for client-credentials authentication.</td><td>Handled in process memory, saved through the configured OS keyring backend, and sent to the Microsoft identity token endpoint when that authentication method is tested.</td></tr>
+              <tr><th scope="row">Authentication information</th><td>Requested scopes, token responses and claims, account-related identifiers, short-lived device codes, verification URLs, and authentication errors.</td><td>Exchanged as needed with identity services. Desktop-test token caching is in memory, distinct from the separate library's persistent-cache options.</td></tr>
+              <tr><th scope="row">Saved test outcomes</th><td>Passed/failed status, local profile ID, a keyed credential fingerprint, and an integrity signature.</td><td>Stored locally to recognize whether a result still matches saved credentials; raw tokens and raw secret values are not written into the outcome record.</td></tr>
+              <tr><th scope="row">Preferences and runtime information</th><td>Display settings, file/lock metadata, UI or dependency warnings, HTTP status categories, error identifiers, and potentially correlation IDs in library diagnostics.</td><td>Local preferences and process/console diagnostics. What a launcher, host application, or endpoint system retains depends on its configuration.</td></tr>
+              <tr><th scope="row">Support information you provide</th><td>Name or account handle, email if used, message content, app/OS version, and redacted attachments you choose to submit.</td><td>Received through the channel you use. Public issues are public; private reporting and correspondence have different recipients.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>Do not put secrets, sensitive personal details, or a customer's name in a profile name unless necessary. The App does not need your Microsoft account password in its own configuration form, your payment-card information, contacts permission, camera access, or microphone access to manage a connection.</p>
+      </section>
+
+      <section id="sources">
+        <h2>3. Where information comes from</h2>
+        <p>The App receives configuration from values you enter, existing profile/configuration files, and the OS credential store. Authentication services return metadata, codes, tokens, and status information when you initiate a test. The local environment supplies display, filesystem, and network information needed to run the App.</p>
+        <p>The Python library can also accept credentials through an explicitly chosen environment file, environment variables, or direct caller input. Those developer-controlled paths are not a claim that the desktop App searches your entire disk or silently imports arbitrary files.</p>
+        <p>DOYDL receives support content from the sender through the communication channel used. A public repository handle may accompany an issue. This does not mean DOYDL routinely obtains your Microsoft account profile, browser history, local documents, or tenant directory contents.</p>
+      </section>
+
+      <section id="network">
+        <h2>4. Network requests and who receives them</h2>
+        <h3>4.1 Local legal documents</h3>
+        <p>The desktop Terms of Use and Privacy Policy are included in the application package. The App reads those HTML files locally and prepares their text for native drawers during interface loading. It does not fetch website policies at startup, run website scripts, load tracking pixels, or send a legal-notice request to doydl.studio.</p>
+        <!-- <p>Choosing Open full document opens the corresponding bundled HTML file using your system's document handler. The documents contain no automatically loaded external resources. External links inside a document contact their destination only if you choose to follow them. If a bundled policy cannot be loaded, the App displays an availability notice rather than silently substituting a website policy.</p> -->
+        <h3>4.2 Tests you choose to start</h3>
+        <p>When you choose Test connection, the App uses MSAL to communicate with the Microsoft identity platform. The desktop transport restricts its own identity HTTP requests to the Microsoft public-cloud host <code>login.microsoftonline.com</code> over verified HTTPS. It sends the configuration and authentication material required by the chosen flow. Your browser's sign-in journey may visit additional Microsoft, organizational, or federated identity destinations.</p>
+        <p>For client credentials, the token request includes the client secret. For interactive and device-code flows, account selection, password entry, multifactor checks, and consent are handled through the identity-provider experience. The current test requests Microsoft Graph's <code>.default</code> scope; permissions depend on your registration and consent.</p>
+        <p>Identity services and relevant network infrastructure receive ordinary connection information, including IP addresses, request times, and protocol metadata. A DNS resolver can see domain lookups; a managed organizational proxy may observe additional information under its own arrangements.</p>
+        <p>The test checks token issuance. It does not subsequently retrieve Graph mail, files, contacts, calendars, or directory contents. Other programs using the library and your credentials may do so under their own control and must provide their own disclosures.</p>
+        <h3>4.3 Links, correspondence, and distribution</h3>
+        <p>Following a website, repository, email, or sign-in link invokes the relevant external handler. The browser or email application can apply its account sessions, history, cookies, extensions, and privacy settings. Website browsing is separate from local policy loading and is subject to the destination's notices.</p>
+        <p>Downloads from GitHub, PyPI, package managers, or another distributor are governed by that distributor's practices. Privacy and support correspondence passes through the email or repository platform you use. The App does not automatically submit your local profiles, credentials, or console output to those channels.</p>
+      </section>
+
+      <section id="storage">
+        <h2>5. Local storage and credential protection</h2>
+        <p>Application data locations are selected using platform-specific user configuration and cache directories. On Windows, configuration normally resides under <code>%LOCALAPPDATA%\azauthlib</code>; cache and other operating-system paths can vary by platform or environment. A custom library token path may point elsewhere.</p>
+        <ul>
+          <li><code>profiles.json</code> records profile IDs, names, and the active selection.</li>
+          <li>The default <code>.env</code> and per-profile configuration files contain non-secret application values, such as tenant and client IDs and the authentication method.</li>
+          <li><code>ui_preferences.json</code> stores display preferences, where the corresponding feature is used.</li>
+          <li><code>connection-test-results.json</code> stores outcome records, fingerprints, and signatures rather than raw token responses or raw secrets.</li>
+          <li>The configured keyring backend stores client secrets under the <code>azauthlib</code> service, keyed by client ID. A separate <code>azauthlib.connection-tests</code> entry can hold the fingerprint key.</li>
+          <li>Known profile files removed through the App may be moved into a <code>removed-profiles</code> archive within configuration or cache storage.</li>
+        </ul>
+        <p>Profile and preference files are not themselves represented as encrypted vaults. A tenant ID or client ID is generally an identifier, not a password, but can still disclose organizational relationships. Protect those files and their backups accordingly.</p>
+        <p>The strength and accessibility of secret storage depend on the actual keyring backend and OS account. The intended Windows backend uses the OS credential facilities; another platform or a custom backend may differ. The App reports a credential-store failure rather than deliberately writing the client secret into its public configuration file.</p>
+        <p>Other software with the appropriate account or administrative access may be able to obtain protected data. Disk encryption, endpoint controls, and a locked session remain important; this Policy does not guarantee protection against a compromised operating system.</p>
+      </section>
+
+      <section id="tokens">
+        <h2>6. Authentication information and tokens</h2>
+        <p>The desktop Test connection implementation uses a fresh in-memory MSAL token cache for each test, disables MSAL's personally identifiable information logging option, and reports a summarized status rather than exposing a raw token in the interface. Public-client test flows explicitly exclude the <code>offline_access</code> scope.</p>
+        <p>Temporary tokens, claims, codes, configuration snapshots, and secrets may exist in process memory while work is performed. "Memory-only cache" does not guarantee cryptographic wiping, zero retention by the OS, or exclusion from swap, crash dumps, security software, or debugging tools. The App does not promise that every sensitive memory allocation is overwritten immediately.</p>
+        <p><strong>The separate library behaves differently:</strong> callers of the azauthlib authentication library can use persistent MSAL caches that may contain account records and access, refresh, or identity-token material. Persistence uses OS-backed encryption by default and fails if secure persistence is unavailable unless a caller explicitly enables plaintext caching. A custom library integration needs to disclose the settings it actually uses.</p>
+        <p>Token expiry, consent, sign-in events, and revocation are controlled by Microsoft and the relevant organization. Closing the App or removing its local records does not guarantee immediate invalidation of an already issued token or deletion of Microsoft-side records.</p>
+      </section>
+
+      <section id="clipboard">
+        <h2>7. Clipboard, browser, and device exposure</h2>
+        <p>If you choose Copy for an active device-code sign-in, the App places that code on the system clipboard. The App does not automatically clear the clipboard afterward. Clipboard history, device synchronization, remote-desktop tools, and other applications may preserve or read the copied content according to their permissions.</p>
+        <p>Some notice text can be selected and copied. Any manual copying of a credential or configuration value outside the App creates another potential copy. Keep screenshots, screen recordings, shared displays, and support attachments free of sensitive values.</p>
+        <p>A browser sign-in may leave browser cookies and account sessions even though the App's token cache was temporary. Browser privacy settings and the identity provider's sign-out/revocation tools control those records, not the App's Remove connection button.</p>
+      </section>
+
+      <section id="tracking">
+        <h2>8. Analytics, advertising, tracking, and automated decisions</h2>
+        <p>The standard desktop implementation contains no integrated advertising SDK, behavioral analytics collector, automatic cloud upload of profiles, or automatic crash-report submission service. It does not create an App-level advertising identifier or use connection configuration to build an advertising profile.</p>
+        <p>The App does not sell local profile information or transmit it for cross-context behavioral advertising. It does not make automated eligibility, credit, employment, insurance, or similarly significant decisions about you. A connection-test result is a technical authentication outcome, not an assessment of your character or entitlement to benefits.</p>
+        <p>These statements concern the desktop App, not every independent service you access. Microsoft and your organization may apply identity, fraud, diagnostic, or conditional-access controls. A website opened in a browser, an operating system, a package distributor, or an organizational monitoring tool may process information under its own notices and settings.</p>
+        <p>Bundled policy documents contain no scripts, remote fonts, embedded images, forms, or tracking resources. Loading them does not set website cookies or contact an analytics endpoint. This notice does not authorize a future tracking feature without the disclosures and permissions required for that feature.</p>
+      </section>
+
+      <section id="purposes">
+        <h2>9. Purposes and, where applicable, legal bases</h2>
+        <p>The App handles local information to carry out your configuration, profile-selection, authentication-testing, and display instructions. Installing the App or reading a notice is not blanket consent to unrelated processing. Your organization remains responsible for the legal basis and authority for its deployment and tenant activity.</p>
+        <div class="table-wrap" role="region" aria-label="Processing purposes" tabindex="0">
+          <table>
+            <caption>Purposes of the processing described in this Policy</caption>
+            <thead><tr><th scope="col">Purpose</th><th scope="col">Information involved</th><th scope="col">Basis and responsibility</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">Run local features</th><td>Profiles, preferences, local outcome records, and necessary credential handling.</td><td>Processing carries out your instructions on your device. Distribution of the App does not give DOYDL access to local-only information or establish a hosted processor relationship.</td></tr>
+              <tr><th scope="row">Authenticate at your request</th><td>Identifiers, requested scopes, credentials appropriate to the flow, and identity responses.</td><td>Microsoft and the responsible tenant organization administer identity processing under their applicable arrangements. Granting an API permission is not a substitute for the organization's privacy obligations.</td></tr>
+              <tr><th scope="row">Respond to support and privacy requests</th><td>Contact details, correspondence, and relevant redacted diagnostics you submit.</td><td>Where privacy laws require a basis, we process correspondence for our legitimate interests in answering requests, resolving defects, and securing the App, subject to applicable balancing requirements; to perform a relevant agreement where necessary; or to meet applicable legal obligations. We rely on consent where that is the required basis.</td></tr>
+              <tr><th scope="row">Meet legal obligations and address claims</th><td>Relevant information actually held by DOYDL.</td><td>Processing is limited to applicable legal obligations or legitimate interests in establishing, exercising, or defending claims, subject to the requirements of the law that applies.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>Where consent is used, you can withdraw it by contacting <a href="mailto:privacy@doydl.studio">privacy@doydl.studio</a>. Withdrawal does not make earlier lawful processing unlawful; it may prevent an optional activity dependent on that consent. It does not revoke a Microsoft credential or delete another controller's records.</p>
+        <p>A new purpose requires an appropriate basis and any additional notice or permission required by law. This general-purpose App does not establish authorization to process special-category, criminal-offense, or other specially protected information in a deployment.</p>
+      </section>
+
+      <section id="sharing">
+        <h2>10. Disclosures and third-party roles</h2>
+        <p>The standard App does not route connection-test credentials through a DOYDL authentication relay. Necessary authentication material goes to the identity service for the flow you initiate. That service and your tenant administrator may retain sign-in records or account/security information under their own arrangements.</p>
+        <p>Correspondence you send to DOYDL is handled through the email or repository channel you choose and the communication/storage services necessary to receive and answer it. Public GitHub submissions are processed on GitHub's platform; email is transmitted through the participating email providers. Access is limited to handling the communication and related legitimate purposes described in this Policy. Contact <a href="mailto:privacy@doydl.studio">privacy@doydl.studio</a> for information about recipients relevant to your request.</p>
+        <p>GitHub receives information submitted through its platform. Public issues and discussions can be seen by anyone and copied by search engines or other parties. For vulnerabilities, use the private process in <a href="https://github.com/doydl-technologies/azauthlib/blob/main/SECURITY.md">SECURITY.md</a>. Do not submit a credential to establish ownership of a connection.</p>
+        <p>Where legally required or permitted, information actually held may need to be disclosed to an authority, professional adviser, or another party in order to comply with a valid legal process, respond to a security incident, establish or defend a claim, or protect rights. Disclosures should be limited to the information and purpose justified by the circumstances; this is not authorization for unrestricted sharing.</p>
+        <p>If a business reorganization would involve transferring personal information held by DOYDL, the transfer must have a valid legal basis and appropriate notice and safeguards. A corporate transaction does not, by itself, transfer a private keyring or local profile that DOYDL never possessed.</p>
+        <p>External references: <a href="https://www.microsoft.com/en-us/privacy/privacystatement">Microsoft Privacy Statement</a> and <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">GitHub General Privacy Statement</a>. These providers' notices, and any organizational agreement governing your use, describe their own processing; DOYDL cannot amend them.</p>
+      </section>
+
+      <section id="retention">
+        <h2>11. Retention, archives, and copies</h2>
+        <p>Retention is not the same for every category. The App has no single "delete everything" timer, and DOYDL cannot remotely erase records it does not control.</p>
+        <div class="table-wrap" role="region" aria-label="Retention inventory" tabindex="0">
+          <table>
+            <caption>Retention and deletion behavior</caption>
+            <thead><tr><th scope="col">Category</th><th scope="col">Retention or deletion behavior</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">Active profiles and preferences</th><td>Remain in local files until changed, removed through the relevant workflow, or manually cleaned up. No automatic age-based expiry is implemented for these files.</td></tr>
+              <tr><th scope="row">Removed-profile archives</th><td>Known files are recoverably moved into <code>removed-profiles</code>. The App does not automatically purge these archives after a fixed period.</td></tr>
+              <tr><th scope="row">OS-stored secrets and fingerprint key</th><td>Can remain after profile removal or uninstall. They require separate review and cleanup; deleting a shared entry can affect another profile or program.</td></tr>
+              <tr><th scope="row">Test outcomes</th><td>Saved locally while useful to the App; removing a profile through the standard desktop workflow attempts to remove its outcome record. A fingerprint no longer matching current credentials makes the old outcome untrusted, but is not a promise that every old byte or backup was erased.</td></tr>
+              <tr><th scope="row">Desktop-test tokens and bundled policy text</th><td>Desktop test tokens use a temporary memory cache. Policy HTML is shipped as package data and kept with the installed release; prepared drawer text is held in session memory. OS and memory artifacts are subject to the limitations in Section 6.</td></tr>
+              <tr><th scope="row">Library token caches</th><td>May persist until cleared by the integration or user. Encryption is the default, not an expiry or deletion policy. Profile removal can archive a known cache; custom paths and backups need separate handling.</td></tr>
+              <tr><th scope="row">Support and privacy correspondence</th><td>We retain correspondence while a request is active and afterward only as needed to complete agreed follow-up, document the resolution and legally required handling, address a related security issue, or establish or defend a claim within the applicable recordkeeping or limitation period. A legal hold can extend retention for the affected records. When those purposes no longer apply, we delete or de-identify the information under our control, subject to applicable backup and platform limits.</td></tr>
+              <tr><th scope="row">Browser, Microsoft, organizational, and backup records</th><td>Controlled by the relevant provider, organization, or backup operator, not by the App's profile-removal workflow. Their separate retention rules apply.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>If a legal hold or statutory requirement prevents deletion of information DOYDL actually holds, retention should be limited to the applicable purpose and period. Residual backup copies require their own lifecycle and restrictions; a promise of instant universal deletion should not be inferred.</p>
+      </section>
+
+      <section id="removal">
+        <h2>12. Removing information, uninstalling, and revoking access</h2>
+        <p><strong>Removing a connection is deliberately recoverable.</strong> It removes the active profile entry, archives known profile files, and keeps shared OS secrets. You can have zero active profiles, but that does not establish that no related files or credentials remain.</p>
+        <ol>
+          <li>Cancel a pending test and close applications using the affected profile before cleanup.</li>
+          <li>Remove the intended connection in the App. Verify that you selected the right profile.</li>
+          <li>Review the corresponding <code>removed-profiles</code> archives and any other authorized copies before deciding what to delete. The App does not certify secure erasure.</li>
+          <li>Use the OS credential-management tools to review the specific client-ID secret and any App fingerprint-key entry. Confirm they are not needed by another profile or program.</li>
+          <li>Review separate library caches, custom paths, backups, clipboard history, and browser sessions if complete local cleanup is your goal.</li>
+          <li>If access must end, use Microsoft/tenant controls to revoke or rotate secrets, review consent, and terminate sessions where appropriate. Local deletion is not revocation.</li>
+        </ol>
+        <p>Uninstallers, package managers, and manual source removal may leave user configuration and keyring data in place. Deleting a program folder alone is not a reliable method of removing all related data. Consult your administrator if the device, credentials, archives, or retention rules are organization-managed.</p>
+        <p>Do not send DOYDL your actual secret, token cache, or complete profile directory to request deletion. DOYDL cannot erase a local file or a Microsoft-controlled record that it does not possess; it can explain the relevant workflow and address information it does hold.</p>
+      </section>
+
+      <section id="choices">
+        <h2>13. Your choices and controls</h2>
+        <ul>
+          <li><strong>Local profile management:</strong> edit or remove profiles and choose not to store unnecessary information. Use non-sensitive connection names.</li>
+          <li><strong>Optional authentication:</strong> do not choose Test connection if you do not want that test's identity traffic. You can cancel an ongoing test; cancellation cannot retract information already sent or undo provider-side records.</li>
+          <li><strong>Permissions and secrets:</strong> manage grants, registration settings, credential rotation, and account access through your organization and Microsoft.</li>
+          <li><strong>Offline legal access:</strong> Terms and Privacy load from the installed package. No website connection is needed to read them; external links are optional.</li>
+          <li><strong>Support:</strong> choose whether to submit information; redact it first. Do not use a public issue for a private privacy request.</li>
+          <li><strong>Browser and clipboard:</strong> use their settings to manage cookies, sessions, clipboard history, and cross-device copies.</li>
+        </ul>
+        <p>The App's local profile handling is not conditional on agreeing to marketing or submitting a support request. Declining a necessary authentication input can prevent that authentication flow from working. A missing local policy file does not require an automatic website request.</p>
+      </section>
+
+      <section id="rights">
+        <h2>14. Privacy rights and how to request them</h2>
+        <p>Depending on your location, the applicable law, and the processing involved, you may have rights to obtain information about processing; access or obtain a copy; correct inaccuracies; request deletion; restrict processing; receive portable information; object to certain processing; withdraw consent where it is used; or complain to a competent supervisory authority. Rights may have lawful exceptions and do not all apply to every record or organization.</p>
+        <p>Use the private contact in Section 19 for information DOYDL actually holds. Identify the nature of the request and the relevant interaction, such as the subject and approximate date of a support message. DOYDL should request only proportionate verification and must not require a Microsoft password, client secret, access token, or a new App account to consider a request.</p>
+        <p>Responses must follow applicable legal deadlines and permitted extensions. If a request cannot be fulfilled, the response should explain the applicable reason and any available review, appeal, complaint, or regulatory route. A public repository issue is not a required gateway to statutory rights.</p>
+        <p>Contact your employer/tenant administrator for its deployment records and Microsoft or another provider for records under its control. For local-only files, use the device controls described above. These distinctions identify the responsible party; they do not remove obligations DOYDL actually has.</p>
+        <h3>United States state privacy laws</h3>
+        <p>Where a relevant state law applies to DOYDL and the processing, eligible residents may have rights to know/access, correct, delete, receive a copy, or opt out of covered sale, targeted advertising/sharing, or certain profiling. Some laws provide an appeal or protection against unlawful discrimination for exercising rights. California law may also provide rights concerning sensitive personal information.</p>
+        <p>The desktop App has no advertising or sale/sharing mechanism to disable. These regional rights apply where the relevant law covers the responsible business and processing. They do not imply that every law applies to every user or every local file. Contact us privately for a request concerning information we actually hold.</p>
+        <h3>European Economic Area, United Kingdom, and other regions</h3>
+        <p>Where applicable, you may complain to the competent supervisory authority and exercise the rights provided by the relevant law. Contact <a href="mailto:privacy@doydl.studio">privacy@doydl.studio</a> for questions about DOYDL-handled correspondence, its recipients, or applicable safeguards. You do not have to give up access to a regulator or court in order to contact us.</p>
+      </section>
+
+      <section id="international">
+        <h2>15. International processing</h2>
+        <p>Local profile storage does not mean that an identity provider or a communication service operates only in your country. Microsoft sign-in, GitHub, email, and organizational infrastructure may process information in other jurisdictions under their applicable arrangements.</p>
+        <p>For correspondence you send to DOYDL, the destination and the communication services involved determine where information is transmitted and handled. Where transfer restrictions apply to a transfer under our responsibility, we use a legally permitted mechanism and required safeguards. You can contact <a href="mailto:privacy@doydl.studio">privacy@doydl.studio</a> for information relevant to your interaction and any available safeguard documentation.</p>
+        <p>This Policy does not claim that DOYDL holds a particular framework certification or guarantees data residency. Merely using the App is not consent to every international transfer and does not replace the safeguards required by applicable law.</p>
+      </section>
+
+      <section id="security">
+        <h2>16. Security and incident reports</h2>
+        <p>The App separates public configuration from keyring secrets, uses verified HTTPS for its desktop test transport, summarizes test errors, and uses keyed fingerprints rather than raw secrets in saved outcome records. OS-backed encryption is the default for persistent library token caches.</p>
+        <p>These measures have limits. Local account compromise, malware, administrative access, memory capture, a custom keyring backend, an explicitly plaintext library cache, a malicious dependency, or an improperly secured backup can expose information. The App is not represented as independently certified or immune to breach.</p>
+        <p>Console/QML warnings and host-application logging may include technical details such as paths or correlation identifiers. The App does not automatically upload its console output, but you or an organizational tool may capture it. Inspect and redact diagnostic material before sharing it.</p>
+        <p>Use the private reporting process in <a href="https://github.com/doydl-technologies/azauthlib/blob/main/SECURITY.md">SECURITY.md</a> for a vulnerability. For a suspected compromise of your tenant, account, or device, also notify the responsible administrator and rotate or revoke affected credentials. Where DOYDL has a legally reportable incident involving information under its responsibility, applicable assessment and notification requirements govern; notification deadlines are determined by applicable law, and no guarantee is made that an incident cannot occur.</p>
+      </section>
+
+      <section id="children">
+        <h2>17. Children and sensitive information</h2>
+        <p>The App is intended for authorized developer and administrative use, not as a child-directed product. It does not implement an age-verification system or a parental-consent service. Applicable minimum-age, consent, and organizational rules still apply to a deployment.</p>
+        <p>If you believe a child has submitted personal information to DOYDL in circumstances requiring action, use the private contact in Section 19. DOYDL must assess and handle information actually received according to applicable law; the local software cannot identify the age of every device user from a profile.</p>
+        <p>Authentication information is sensitive even when it is not classified as a special category under a particular law. Do not put health, biometric, financial, precise-location, government-identifier, or other unnecessary sensitive information into profile names, support messages, or screenshots. Access to a regulated tenant is not a claim that the App satisfies that sector's compliance obligations.</p>
+      </section>
+
+      <section id="changes">
+        <h2>18. Changes and scope of this Policy</h2>
+        <p>This Policy is effective on the date shown above and describes the standard desktop release in which it is bundled. A modified build or another program embedding the library may process information differently and must provide its own accurate notice.</p>
+        <p>Revisions identify their effective date. Material changes in processing require appropriate notice and any additional legal basis or consent required before the new processing begins. A policy update cannot retroactively authorize an unrelated use of information.</p>
+        <p>The installed App loads this document locally rather than silently replacing it with website text. A later application update may bundle a newer policy. Future telemetry, hosted credential functions, automatic update checking, or additional provider integrations require disclosures reflecting their actual behavior.</p>
+      </section>
+
+      <section id="contact">
+        <h2>19. Contact information</h2>
+        <div class="contact">
+          <p><strong>Responsible publisher:</strong> DOYDL Technologies</p>
+          <p><strong>Privacy inquiries and rights requests:</strong> <a href="mailto:privacy@doydl.studio">privacy@doydl.studio</a></p>
+          <p><strong>Legal inquiries:</strong> <a href="mailto:legal@doydl.studio">legal@doydl.studio</a></p>
+          <p><strong>Business mailing address:</strong> DOYDL Technologies, 11166 Fairfax Blvd, Suite 500 #1378, Fairfax, VA 22030, United States</p>
+          <p><strong>Website:</strong> <a href="https://doydl.studio/">doydl.studio</a></p>
+          <p><strong>Repository:</strong> <a href="https://github.com/doydl-technologies/azauthlib">doydl-technologies/azauthlib</a></p>
+          <p><strong>Private security reports:</strong> follow <a href="https://github.com/doydl-technologies/azauthlib/blob/main/SECURITY.md">SECURITY.md</a>.</p>
+        </div>
+        <p>Send private privacy inquiries to <a href="mailto:privacy@doydl.studio">privacy@doydl.studio</a>. Do not send a password, client secret, full token, or unredacted profile to verify your identity. Public GitHub issues are not a substitute for this private channel.</p>
+      </section>
+    </article>
+
+    <footer>
+      <p>azauthlib desktop application · DOYDL Technologies · Effective October 16, 2026</p>
+      <p><a href="#top">Back to top</a> · <a href="DESKTOP_APP_TERMS_OF_USE.html">Desktop App Terms of Use</a></p>
+    </footer>
+  </main>
+</body>
+</html>

@@ -1,47 +1,21 @@
 # -*- coding: utf-8 -*-
 
 #
-# doydl's Microsoft Identity Authentication Library — azauthlib
+# DOYDL's Microsoft Identity Authentication Library — azauthlib
 #
-# The `azauthlib` module is a secure authentication library for acquiring, caching, and
-# refreshing Microsoft identity platform tokens across public and confidential client
-# applications — built on MSAL for Python and MSAL Extensions.
+# Copyright 2024 DOYDL Technologies.
 #
-# Designed for predictable credential handling, `azauthlib` supports interactive, silent,
-# device-code, and client-credentials flows — separating delegated scopes from application
-# scopes and returning explicit authentication results and typed failures.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-# The library combines exact-path configuration loading, OS-backed secret storage, and
-# encrypted, cross-process-safe token persistence to support Microsoft Graph clients,
-# automation services, and desktop applications.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# It avoids import-time filesystem side effects, fails closed when secure cache persistence
-# is unavailable, and normalizes application data paths consistently across Windows, macOS,
-# and Linux.
-#
-# Whether embedded in command-line tools, desktop applications, background services, or data
-# pipelines, `azauthlib` provides a focused security boundary around Microsoft identity
-# configuration and token acquisition.
-#
-# Copyright (c) 2024 by doydl technologies. All rights reserved.
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the “Software”), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 #
 
 """Exact-path configuration loading and OS-backed secret storage."""
@@ -60,6 +34,7 @@ from ._configure import get_settings
 from .appdata import ensure_private_directory
 
 KEYRING_SERVICE = "azauthlib"
+AUTH_METHODS = frozenset({"interactive", "device_code", "client_credentials"})
 
 
 class CredentialStoreError(RuntimeError):
@@ -75,9 +50,11 @@ def _public_config_value(name: str, value: str) -> str:
     return normalized
 
 
-def load_credentials(path=None) -> dict[str, str | None]:
+def load_credentials(path=None, *, profile=None) -> dict[str, str | None]:
     """Load credentials from one exact file, environment, and the OS keyring."""
-    selected = Path(path or get_settings().env_path).expanduser().resolve()
+    if path is not None and profile is not None:
+        raise ValueError("path and profile cannot be used together")
+    selected = Path(path or get_settings(profile).env_path).expanduser().resolve()
     file_values = dotenv_values(selected) if selected.is_file() else {}
     client_id = os.getenv("CLIENT_ID") or file_values.get("CLIENT_ID")
     tenant_id = os.getenv("TENANT_ID") or file_values.get("TENANT_ID")
@@ -94,7 +71,35 @@ def load_credentials(path=None) -> dict[str, str | None]:
         "tenant_id": tenant_id,
         "client_secret": secret,
         "authority": os.getenv("AZURE_AUTHORITY") or file_values.get("AZURE_AUTHORITY"),
+        "auth_method": file_values.get("AUTH_METHOD") or "interactive",
     }
+
+
+def load_public_configuration(*, profile=None) -> dict[str, str | None]:
+    """Load non-secret values for a profile without accessing the OS keyring."""
+
+    selected = get_settings(profile).env_path.expanduser().resolve()
+    file_values = dotenv_values(selected) if selected.is_file() else {}
+    auth_method = file_values.get("AUTH_METHOD") or "interactive"
+    if auth_method not in AUTH_METHODS:
+        auth_method = "interactive"
+    return {
+        "client_id": file_values.get("CLIENT_ID"),
+        "tenant_id": file_values.get("TENANT_ID"),
+        "authority": file_values.get("AZURE_AUTHORITY"),
+        "auth_method": auth_method,
+    }
+
+
+def has_stored_secret(client_id: str | None) -> bool:
+    """Return whether the OS credential manager contains a secret for a client ID."""
+
+    if not client_id:
+        return False
+    try:
+        return keyring.get_password(KEYRING_SERVICE, client_id) is not None
+    except Exception as exc:
+        raise CredentialStoreError("Unable to read the client secret from the OS keyring") from exc
 
 
 def save_configuration(
@@ -104,13 +109,19 @@ def save_configuration(
     client_secret: str | None = None,
     authority: str | None = None,
     path=None,
+    profile=None,
+    auth_method: str | None = None,
 ) -> Path:
     """Write non-secret configuration and store the secret in the OS keyring."""
     client_id = _public_config_value("client_id", client_id)
     tenant_id = _public_config_value("tenant_id", tenant_id)
     if authority is not None:
         authority = _public_config_value("authority", authority)
-    target = Path(path or get_settings().env_path).expanduser().resolve()
+    if path is not None and profile is not None:
+        raise ValueError("path and profile cannot be used together")
+    if auth_method is not None and auth_method not in AUTH_METHODS:
+        raise ValueError("auth_method is unsupported")
+    target = Path(path or get_settings(profile).env_path).expanduser().resolve()
     ensure_private_directory(target.parent)
     if client_secret:
         try:
@@ -126,6 +137,8 @@ def save_configuration(
     ]
     if authority:
         lines.append(f"AZURE_AUTHORITY={authority}")
+    if auth_method:
+        lines.append(f"AUTH_METHOD={auth_method}")
     fd, temporary_name = tempfile.mkstemp(prefix=f".{target.name}.", dir=target.parent, text=True)
     try:
         if os.name != "nt":
@@ -142,4 +155,11 @@ def save_configuration(
     return target
 
 
-__all__ = ["CredentialStoreError", "load_credentials", "save_configuration"]
+__all__ = [
+    "AUTH_METHODS",
+    "CredentialStoreError",
+    "has_stored_secret",
+    "load_credentials",
+    "load_public_configuration",
+    "save_configuration",
+]

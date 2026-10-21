@@ -1,0 +1,24 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" width="404.25" height="207" viewBox="37 159 404.25 207" fill="#FFFFFF">
+  <title>Disconnected wall socket and electrical plug</title>
+  <!-- Editable vector artwork. Transparent background.
+       Change the root fill and the socket stroke to recolor the icon.
+       Edit either positioning transform to move the socket or the complete plug. -->
+  <g id="socket-position" transform="translate(0 0)">
+    <g id="wall-socket" fill="none" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round">
+      <rect id="socket-plate" x="42.3" y="164.2" width="176" height="196.6" rx="25.6" stroke-width="25"/>
+      <ellipse id="socket-opening" cx="130.8" cy="262.1" rx="55.2" ry="58.2" stroke-width="15"/>
+      <path id="socket-slots" d="M109.7 250.2V273 M151.8 250.2V273" stroke-width="15"/>
+    </g>
+  </g>
+  <g id="plug-position" transform="translate(14 0)">
+    <path id="upper-prong" d="M237.1 226.3H274.8Q276.8 226.3 276.8 228.3V240.3Q276.8 242.3 274.8 242.3H237.1A8 8 0 0 1 237.1 226.3Z"/>
+    <path id="lower-prong" d="M237.1 281.1H274.8Q276.8 281.1 276.8 283.1V295.1Q276.8 297.1 274.8 297.1H237.1A8 8 0 0 1 237.1 281.1Z"/>
+    <!-- Horizontal scale controls cord length: 1 is full length, 0.5 is half, and 0.25 is one quarter. -->
+
+    <path id="plug-cord" d="M411 262.8H425.5C431.25 262.8 433.9 286.1 441.075 286.1" fill="none" stroke="#FFFFFF" stroke-width="14.5"/> 
+    <rect id="cord-collar" x="387" y="244.3" width="30" height="36.4" rx="3.3"/>
+    <path id="plug-body" d="M296 211.2H346.5C369.7 211.2 386.3 227.7 394.3 245V279.7C386.6 299.4 370.6 312.5 347.2 312.5H296Z"/>
+    <rect id="plug-face" x="280.2" y="201.4" width="25.6" height="120.3" rx="3.8"/>
+  </g>
+</svg>

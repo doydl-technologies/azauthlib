@@ -1,0 +1,53 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" width="260" height="261.75" viewBox="55.5 56.75 260 261.75" shape-rendering="geometricPrecision">
+  <title>Disconnected electrical plugs and connected cable plugs</title>
+  <!-- Plug parts share a 45-degree axis with independent positioning and fill controls. -->
+  <defs>
+    <mask id="cable-plug-definition" maskUnits="userSpaceOnUse" x="0" y="0" width="733" height="732" style="mask-type:luminance">
+      <rect width="733" height="732" fill="#FFFFFF" />
+      <g id="male-housing-lines" transform="translate(-58.5 51.5) translate(466 274) rotate(45)" fill="none" stroke="#000000" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+        <path id="male-housing-lines-face-seam" d="M-70 48 L70 48" />
+        <path id="male-housing-lines-grip-left" d="M-36 -25V19" />
+        <path id="male-housing-lines-grip-right" d="M0 -25V19" />
+        <path id="male-housing-lines-housing-contour" d="M36 -25V19" />
+        <path id="male-housing-lines-strain-relief-1" d="M-26 -138H26" />
+        <path id="male-housing-lines-strain-relief-2" d="M-26 -117H26" />
+        <path id="male-housing-lines-strain-relief-3" d="M-26 -96H26" />
+      </g>
+      <g id="female-housing-lines" transform="translate(58.5 -51.5) translate(268.389827 457.610173) rotate(45)" fill="none" stroke="#000000" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+        <path id="female-housing-lines-face-seam" d="M-72 -18 L72 -18" />
+        <path id="female-housing-lines-grip-left" d="M-36 7V48" />
+        <path id="female-housing-lines-grip-right" d="M0 7V48" />
+        <path id="female-housing-lines-housing-contour" d="M36 7V48" />
+        <path id="female-housing-lines-strain-relief-1" d="M-26 95H26" />
+        <path id="female-housing-lines-strain-relief-2" d="M-26 116H26" />
+        <path id="female-housing-lines-strain-relief-3" d="M-26 138H26" />
+      </g>
+    </mask>
+    <mask id="electrical-plug-definition" maskUnits="userSpaceOnUse" x="0" y="0" width="494" height="437" style="mask-type:luminance">
+      <rect width="494" height="437" fill="#FFFFFF" />
+      <g id="upper-electrical-housing" transform="translate(310 153) rotate(45)" fill="none" stroke="#000000" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+        <path id="upper-electrical-housing-housing-seam" d="M-43 30 L43 30" />
+        <path id="upper-electrical-housing-side-contour" d="M32 -25 L32 11" />
+        <path id="upper-electrical-housing-cable-collar" d="M-9 -52 L9 -52" />
+      </g>
+      <g id="lower-electrical-housing" transform="translate(184 281) rotate(45)" fill="none" stroke="#000000" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+        <path id="lower-electrical-housing-face-seam" d="M-47 -30 L47 -30" />
+        <path id="lower-electrical-housing-rear-seam" d="M-31 46 L31 46" />
+        <path id="lower-electrical-housing-cable-collar" d="M-10 67 L10 67" />
+      </g>
+      <g id="electrical-plug-openings" fill="#000000">
+        <circle id="upper-plug-opening" cx="310" cy="153" r="13.3" />
+        <g transform="translate(184 281) rotate(45)">
+          <rect id="upper-slot" x="-29.5" y="-7.5" width="59" height="9" rx="4.5" />
+          <rect id="lower-slot" x="-29.5" y="17.5" width="59" height="9" rx="4.5" />
+        </g>
+      </g>
+    </mask>
+  </defs>
+  <g id="electrical-plugs" transform="translate(-51.6 -27.2) scale(0.974)" mask="url(#electrical-plug-definition)">
+    <path id="electrical-plugs-upper-plug" fill="#FFFFFF" fill-rule="nonzero" d="M-2 -85H2Q6 -85 6 -81V-46Q6 -42 2 -42H-2Q-6 -42 -6 -46V-81Q-6 -85 -2 -85Z M-7 -63H7Q12 -63 12 -58V-46Q12 -41 7 -41H-7Q-12 -41 -12 -46V-58Q-12 -63 -7 -63Z M-38 -50H38Q50 -50 50 -38V38Q50 50 38 50H-38Q-50 50 -50 38V-38Q-50 -50 -38 -50Z M-51 32H51Q64 32 64 45V45Q64 58 51 58H-51Q-64 58 -64 45V45Q-64 32 -51 32Z M-30 42H-30Q-21 42 -21 51V101Q-21 110 -30 110H-30Q-39 110 -39 101V51Q-39 42 -30 42Z M30 42H30Q39 42 39 51V101Q39 110 30 110H30Q21 110 21 101V51Q21 42 30 42Z" transform="translate(310 153) rotate(45)" />
+    <path id="electrical-plugs-lower-plug" fill="#FFFFFF" fill-rule="nonzero" d="M-2 66H2Q6 66 6 70V96Q6 100 2 100H-2Q-6 100 -6 96V70Q-6 66 -2 66Z M-11 49H11Q16 49 16 54V73Q16 78 11 78H-11Q-16 78 -16 73V54Q-16 49 -11 49Z M-38 -40H38Q50 -40 50 -28V48Q50 60 38 60H-38Q-50 60 -50 48V-28Q-50 -40 -38 -40Z M-51 -52H51Q64 -52 64 -39V-39Q64 -26 51 -26H-51Q-64 -26 -64 -39V-39Q-64 -52 -51 -52Z" transform="translate(184 281) rotate(45)" />
+  </g>
+  <!-- Connected pair position: translate(X Y). Negative X moves left; positive Y moves down. -->
+</svg>
