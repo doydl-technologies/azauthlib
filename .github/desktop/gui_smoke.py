@@ -209,6 +209,11 @@ def run_checks(installed, artifacts, report):
                             )
 
                     config_app.configure_application_identity(app, resources)
+                    require(
+                        app.organizationDomain() == "doydl.studio",
+                        "Application organization domain is incorrect",
+                    )
+                    report["checks"].append("application organization domain")
                     engine = QQmlApplicationEngine()
                     engine.warnings.connect(
                         lambda values: warnings.extend(value.toString() for value in values)
