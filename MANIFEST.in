@@ -1,0 +1,26 @@
+# Source distributions must exclude the same local-only files as wheels/Git.
+include CHANGELOG.md
+recursive-include tests *.py
+exclude src/azauthlib/UI_IMPLEMENTATION_NOTES.md
+exclude src/azauthlib/gui/qml/_Search-Qml.cmd-
+exclude src/azauthlib/gui/qml/_Search-Qml.ps1-
+exclude src/azauthlib/gui/qml/Search-Qml.cmd
+exclude src/azauthlib/gui/qml/Search-Qml.ps1
+exclude src/azauthlib/gui/qml/Search-Qml.settings.json
+exclude src/azauthlib/gui/qml/.repoSearch.settings.json
+exclude src/azauthlib/gui/qml/repoSearch
+exclude src/azauthlib/gui/qml/repoSearch.cmd
+prune src/azauthlib/gui/qml/components/.dormant
+prune src/azauthlib/gui/qml/shaders/.dormant
+prune src/azauthlib/assets/animate/.dormant
+prune src/azauthlib/assets/controls/.dormant
+prune src/azauthlib/assets/fonts/.dormant
+prune src/azauthlib/assets/icons/png/.dormant
+prune src/azauthlib/assets/icons/svg/.docs
+prune src/azauthlib/assets/icons/svg/.dormant
+prune src/azauthlib/assets/icons/svg/.scripts
+prune src/azauthlib/assets/icons/svg/third-party
+prune src/azauthlib/assets/themes/.dormant
+prune src/azauthlib/assets/logo/third-party/.dormant
+prune src/azauthlib/assets/logo/png/.dormant
+prune src/azauthlib/assets/logo/svg/.dormant

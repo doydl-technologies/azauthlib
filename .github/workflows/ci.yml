@@ -11,6 +11,8 @@ permissions:
 jobs:
   test:
     runs-on: ${{ matrix.os }}
+    env:
+      QT_QPA_PLATFORM: ${{ startsWith(matrix.os, 'ubuntu') && 'offscreen' || '' }}
     strategy:
       fail-fast: false
       matrix:

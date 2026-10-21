@@ -1,0 +1,33 @@
+
+<svg xmlns="http://www.w3.org/2000/svg" width="1300" height="32" role="img" aria-labelledby="divider-title">
+  <title id="divider-title">Glowing blue divider</title>
+  <!-- Qt uses numeric coordinates on a 1300 x 32 canvas.
+       Keep gradient, line, and filter coordinates aligned when resizing.
+       No viewBox is used, so stroke widths remain fixed. -->
+  <defs>
+
+
+    <linearGradient id="divider-color" gradientUnits="userSpaceOnUse" x1="10" y1="16" x2="1290" y2="16">    
+      <stop offset="0" stop-color="#2563EB" stop-opacity="0"/>
+      <stop offset="0.12" stop-color="#2563EB" stop-opacity="0.45"/>
+      <stop offset="0.4" stop-color="#38A8FF" stop-opacity="0.85"/>
+      <stop offset="0.5" stop-color="#5CE0FF" stop-opacity="1"/>
+      <stop offset="0.6" stop-color="#38A8FF" stop-opacity="0.85"/>
+      <stop offset="0.88" stop-color="#2563EB" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#2563EB" stop-opacity="0"/>
+    </linearGradient>
+
+    <filter id="divider-glow" filterUnits="userSpaceOnUse" x="0" y="0" width="1300" height="32" color-interpolation-filters="sRGB">
+      <!-- Increase stdDeviation for a softer, wider glow. -->
+      <feGaussianBlur stdDeviation="2"/>
+    </filter>
+  </defs>
+  <!-- Glow strength is controlled by opacity and stroke width. -->
+
+
+  <line id="glow" x1="10" y1="16" x2="1290" y2="16" stroke="url(#divider-color)" stroke-width="5" opacity="0.4" filter="url(#divider-glow)"/>  
+  <!-- The core stroke defines the sharp line thickness. -->
+
+
+  <line id="divider" x1="10" y1="16" x2="1290" y2="16" stroke="url(#divider-color)" stroke-width="1"/>  
+</svg>

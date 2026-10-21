@@ -9,10 +9,10 @@ description = "Secure Microsoft identity platform authentication helpers built o
 readme = "README.md"
 requires-python = ">=3.10"
 license = "Apache-2.0"
-authors = [{ name = "Cedric Moore Jr." }]
+authors = [{ name = "DOYDL Technologies" }]
 keywords = ["azure", "entra", "microsoft-graph", "msal", "oauth2", "authentication"]
 classifiers = [
-  "Development Status :: 4 - Beta",
+  "Development Status :: 5 - Production/Stable",
   "Intended Audience :: Developers",
   "Operating System :: MacOS :: MacOS X",
   "Operating System :: Microsoft :: Windows",
@@ -27,12 +27,16 @@ classifiers = [
   "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
+  "certifi>=2026.10.19",
   "keyring>=25,<26",
   "msal>=1.31,<2",
   "msal-extensions>=1.2,<2",
   "platformdirs>=4,<5",
   "portalocker>=2.10,<4",
+  "PySide6>=6.8,<7",
   "python-dotenv>=1.0,<2",
+  "requests>=2.32,<3",
+  "resvg_py>=0.5,<0.6",
 ]
 
 [project.optional-dependencies]
@@ -59,11 +63,47 @@ azauthlib-app = "azauthlib.gui.config_app:main"
 [tool.setuptools.dynamic]
 version = { attr = "azauthlib.__version__" }
 
+[tool.setuptools]
+include-package-data = false
+
 [tool.setuptools.packages.find]
 where = ["src"]
+include = ["azauthlib", "azauthlib.*"]
+namespaces = false
 
 [tool.setuptools.package-data]
-azauthlib = ["assets/*.png"]
+azauthlib = [
+  "assets/**/*.png",
+  "assets/**/*.ico",
+  "assets/**/*.svg",
+  "assets/fonts/*.ttf",
+  "assets/fonts/*-OFL.txt",
+  "assets/docs/legal/*.md",
+  "assets/docs/legal/*.html",
+  "gui/qml/*.qml",
+  "gui/qml/components/*.qml",
+  "gui/qml/shaders/*.frag",
+  "gui/qml/shaders/*.qsb",
+  "gui/qml/theme/*.qml",
+  "gui/qml/theme/qmldir",
+]
+
+[tool.setuptools.exclude-package-data]
+azauthlib = [
+  "**/.dormant/*",
+  "**/.docs/*",
+  "**/.scripts/*",
+  "assets/icons/svg/third-party/*",
+  "UI_IMPLEMENTATION_NOTES.md",
+  "gui/qml/_Search-Qml.cmd-",
+  "gui/qml/_Search-Qml.ps1-",
+  "gui/qml/Search-Qml.cmd",
+  "gui/qml/Search-Qml.ps1",
+  "gui/qml/Search-Qml.settings.json",
+  "gui/qml/.repoSearch.settings.json",
+  "gui/qml/repoSearch",
+  "gui/qml/repoSearch.cmd",
+]
 
 [tool.pytest.ini_options]
 addopts = "--strict-config --strict-markers --cov=azauthlib --cov-report=term-missing --cov-fail-under=85"
@@ -81,7 +121,8 @@ ignore = ["S603", "UP009"]
 "tests/**/*.py" = ["S101", "S105", "S106"]
 
 [tool.coverage.run]
-omit = ["src/azauthlib/gui/*"]
+# Desktop behavior is checked separately; keep the same scope for installed wheels.
+omit = ["*/azauthlib/gui/*"]
 
 [tool.bandit]
-exclude_dirs = ["tests"]
+exclude_dirs = ["tests", ".scripts", ".dormant"]

@@ -1,0 +1,34 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" viewBox="85.25 28.25 341.5 455.5" width="341.5" height="455.5">
+
+  <defs>
+    <filter id="insetShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <!-- Inner dark shadow -->
+      <feOffset dx="-8" dy="-8" result="off1" />
+      <feGaussianBlur in="off1" stdDeviation="8" result="blur1" />
+      <feComposite in="blur1" in2="SourceAlpha" operator="in" result="innerShadow" />
+
+      <!-- Inner light highlight -->
+      <feOffset dx="6" dy="6" result="off2" />
+      <feGaussianBlur in="off2" stdDeviation="6" result="blur2" />
+      <feComposite in="blur2" in2="SourceAlpha" operator="in" result="innerHighlight" />
+
+      <feFlood flood-color="#000000" flood-opacity="0.25" result="shadowColor" />
+      <feComposite in="shadowColor" in2="innerShadow" operator="in" result="shadowFill" />
+
+      <feFlood flood-color="#FFFFFF" flood-opacity="0.45" result="highlightColor" />
+      <feComposite in="highlightColor" in2="innerHighlight" operator="in" result="highlightFill" />
+
+      <feMerge>
+        <feMergeNode in="SourceGraphic" />
+        <feMergeNode in="shadowFill" />
+        <feMergeNode in="highlightFill" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <g transform="translate(28.44 28.44) scale(0.8889)" filter="url(#insetShadow)">
+    <path fill="#D9DDE1" d="M160 0c-17.7 0-32 14.3-32 32v96h64V32c0-17.7-14.3-32-32-32m192 0c-17.7 0-32 14.3-32 32v96h64V32c0-17.7-14.3-32-32-32M96 160c-17.7 0-32 14.3-32 32s14.3 32 32 32v32c0 77.4 55 142 128 156.8V480c0 17.7 14.3 32 32 32s32-14.3 32-32v-67.2C361 398 416 333.4 416 256v-32c17.7 0 32-14.3 32-32s-14.3-32-32-32z" />
+  </g>
+
+</svg>

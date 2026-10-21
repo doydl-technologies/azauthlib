@@ -1,0 +1,60 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" width="440" height="520.75" viewBox="36 2.5 440 520.75" fill="none" role="img" aria-labelledby="title desc">
+  <!-- The 440 x 520.75 viewBox includes transparent space around the shield for its glow. -->
+  <defs>
+    <linearGradient id="pythonBlueGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#22A4FD" />
+      <stop offset="1" stop-color="#1D9CFB" />
+    </linearGradient>
+    <linearGradient id="pythonYellowGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFD84A" />
+      <stop offset="1" stop-color="#FBCD3B" />
+    </linearGradient>
+    <filter id="pythonBadgeShadow" x="-25%" y="-25%" width="150%" height="165%">
+      <feDropShadow dx="0" dy="6" stdDeviation="5" flood-color="#061735" flood-opacity="0.52" />
+    </filter>
+    <path id="shield-glow-profile" d="M256 28        L408 80        C432 88 448 111 448 136        V276        C448 365 397 427 319 468        L274 492        C263 498 249 498 238 492        L193 468        C115 427 64 365 64 276        V136        C64 111 80 88 104 80        L256 28Z" fill="none" />
+    <filter id="shield-outer-glow" filterUnits="userSpaceOnUse" primitiveUnits="userSpaceOnUse" x="0" y="-36" width="512" height="596.5" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="12" />
+    </filter>
+    <filter id="shield-near-glow" filterUnits="userSpaceOnUse" primitiveUnits="userSpaceOnUse" x="0" y="-36" width="512" height="596.5" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="4" />
+    </filter>
+  </defs>
+  <title id="title">azauthlib logo</title>
+  <desc id="desc">A secure authentication gate with a protected token moving through it.</desc>
+  <!--
+    azauthlib
+    Concept: secure authentication gate + protected access token.
+    Self-contained SVG; no fonts, images, CSS, or JavaScript.
+  -->
+  <!-- Shield / secure boundary -->
+  <!-- Uniform glow: both blur layers have zero offset. Edit stroke colors and opacity here; blur softness lives in defs. -->
+  <g id="shield-glow" fill="none" stroke-linejoin="round" stroke-linecap="round" pointer-events="none">
+    <use id="wide-blue-glow" href="#shield-glow-profile" stroke="#007BFF" stroke-width="12" opacity="0.85" filter="url(#shield-outer-glow)" />
+    <use id="near-cyan-glow" href="#shield-glow-profile" stroke="#00B7FF" stroke-width="6" opacity="1" filter="url(#shield-near-glow)" />
+  </g>
+  <path d="M256 28        L408 80        C432 88 448 111 448 136        V276        C448 365 397 427 319 468        L274 492        C263 498 249 498 238 492        L193 468        C115 427 64 365 64 276        V136        C64 111 80 88 104 80        L256 28Z" fill="#0D1B2A" />
+  <use id="bright-shield-rim" href="#shield-glow-profile" fill="none" stroke="#46CDFF" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" pointer-events="none" />
+  <!-- Subtle inner boundary reinforces protected storage/security -->
+  <path d="M256 64        L389 109        C402 114 410 126 410 140        V274        C410 345 370 394 302 430        L256 455        L210 430        C142 394 102 345 102 274        V140        C102 126 110 114 123 109        L256 64Z" stroke="#20364D" stroke-width="10" stroke-linejoin="round" />
+  <!-- Stylized A: authentication gate / project initial -->
+  <path d="M164 348L248 160        C251 153 261 153 264 160        L348 348" stroke="#F6F9FC" stroke-width="34" stroke-linecap="round" stroke-linejoin="round" />
+  <!-- Token / authorization flow through the gate -->
+  <path d="M150 292H362" stroke="#2FA7FF" stroke-width="22" stroke-linecap="round" />
+  <!-- Endpoints: request -> authenticated result -->
+  <circle cx="150" cy="292" r="17" fill="#35D0BA" />
+  <circle cx="362" cy="292" r="17" fill="#35D0BA" />
+  <!-- Protected token / keyhole at the center of the gate -->
+  <circle cx="256" cy="292" r="42" fill="#2FA7FF" />
+  <circle cx="256" cy="282" r="13" fill="#0D1B2A" />
+  <path d="M249 292H263V322C263 326 260 329 256 329C252 329 249 326 249 322V292Z" fill="#0D1B2A" />
+  <!-- Three compact flow indicators: interactive, device-code, client credentials -->
+  <circle cx="226" cy="392" r="8" fill="#35D0BA" />
+  <circle cx="256" cy="392" r="8" fill="#35D0BA" />
+  <circle cx="286" cy="392" r="8" fill="#35D0BA" />
+
+  <g filter="url(#pythonBadgeShadow)">
+    
+  </g>
+</svg>

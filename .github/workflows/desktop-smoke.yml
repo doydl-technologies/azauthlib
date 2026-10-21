@@ -1,0 +1,93 @@
+name: Desktop package checks
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'pyproject.toml'
+      - 'MANIFEST.in'
+      - '.github/desktop/**'
+      - '.github/workflows/desktop-smoke.yml'
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'pyproject.toml'
+      - 'MANIFEST.in'
+      - '.github/desktop/**'
+      - '.github/workflows/desktop-smoke.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  desktop:
+    name: Desktop / ${{ matrix.os }} / Python 3.13
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2025, macos-15]
+    env:
+      PYTHONUNBUFFERED: '1'
+      QT_SCALE_FACTOR: '0.85'
+      QT_QUICK_CONTROLS_STYLE: Basic
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install build/check tools
+        run: python -m pip install --upgrade pip build twine pytest
+      - name: Check CI helpers
+        run: python -m pytest -q -o addopts= .github/desktop/test_helpers.py --junitxml=ci-artifacts/helper-tests.xml
+      - name: Install Linux display dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            xvfb xauth libegl1 libgl1 libgl1-mesa-dri \
+            libx11-xcb1 libxi6 libxrender1 libxkbcommon0 libxkbcommon-x11-0 \
+            libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 \
+            libxcb-render0 libxcb-render-util0 libxcb-shape0 libxcb-shm0 \
+            libxcb-randr0 libxcb-sync1 libxcb-xfixes0 libxcb-xinerama0 \
+            libxcb-xinput0 libxcb-xkb1
+      - name: Build, inspect, and install distributions
+        run: python .github/desktop/ci_prepare.py --artifacts ci-artifacts
+      - name: Inspect Linux Qt platform dependencies
+        if: runner.os == 'Linux'
+        run: |
+          ldd ci-artifacts/installed/PySide6/Qt/plugins/platforms/libqxcb.so | tee ci-artifacts/qt-platform-dependencies.log
+          if grep -q 'not found' ci-artifacts/qt-platform-dependencies.log; then
+            exit 1
+          fi
+      - name: Native Windows/macOS GUI checks (splash disabled)
+        if: runner.os != 'Linux'
+        run: python .github/desktop/gui_smoke.py --installed ci-artifacts/installed --artifacts ci-artifacts
+      - name: Linux X11 GUI checks (splash disabled)
+        if: runner.os == 'Linux'
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          QSG_RHI_BACKEND: opengl
+        run: xvfb-run -a -s "-screen 0 1600x1000x24" python .github/desktop/gui_smoke.py --installed ci-artifacts/installed --artifacts ci-artifacts
+      - name: Upload distributions and diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: desktop-checks-${{ matrix.os }}-py313
+          retention-days: 7
+          if-no-files-found: warn
+          path: |
+            ci-artifacts/dist/
+            ci-artifacts/*.log
+            ci-artifacts/*.json
+            ci-artifacts/*.xml
+            ci-artifacts/screenshots/

@@ -32,18 +32,27 @@ Do not configure a long-lived PyPI API token. The publish job requests a short-l
    bandit -c pyproject.toml -r src
    pip-audit --skip-editable
    pytest
+   python -m pytest -q -o addopts= .github/desktop/test_helpers.py
    python -m build
    twine check dist/*
    ```
 
-4. Merge the release pull request into `main` only after all required checks pass.
+4. Merge the release pull request into `main` only after all required checks pass. Require both
+   `CI` and `Desktop package checks` on the exact release commit, including Windows, macOS, and
+   Linux desktop checks. A local Windows pass does not replace the native macOS/Linux checks.
+   Review the Windows upgrade guidance and include every runtime asset and restored test in the
+   commit; do not publish from an uncommitted working tree.
 5. Create a draft GitHub release targeting `main` with a tag matching `v` plus the exact package
-   version, for example `v1.4.0b1`. Paste the matching release-notes file and mark beta releases as
-   pre-releases.
+   version, for example `v2.0.0`. Paste the matching release-notes file. Mark the GitHub release as
+   a pre-release only when the package version is itself a pre-release.
 6. Publish the GitHub release. The `Publish to PyPI` workflow verifies that the tagged commit is on
    `main`, verifies the tag/version match, builds and smoke-tests the distributions, publishes them
-   to PyPI, and attaches them plus `SHA256SUMS.txt` to the GitHub release.
+   to PyPI, and attaches them plus `SHA256SUMS.txt` to the GitHub release. Source-quality,
+   security, installed-wheel tests, and runtime-asset checks must pass before publication.
 7. Verify the GitHub workflow, PyPI metadata, provenance, and a clean-environment installation.
 
 Published PyPI files and release tags are immutable release records. If a release is wrong, publish
 a corrected version rather than replacing its files or moving its tag.
+
+The current source version is `004.017.006`, normalized by Python packaging to `4.17.6`.
+With the current tag check, use `v004.017.006` for the GitHub tag and `4.17.6` in pip commands.
