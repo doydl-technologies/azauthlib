@@ -98,4 +98,4 @@ jobs:
       - name: Attach distributions to GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "${GITHUB_REF_NAME}" dist/* SHA256SUMS.txt --clobber
+        run: gh release upload "${GITHUB_REF_NAME}" dist/* SHA256SUMS.txt --repo "${GITHUB_REPOSITORY}" --clobber
