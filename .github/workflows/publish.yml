@@ -46,7 +46,11 @@ jobs:
       - name: Test installed wheel
         env:
           QT_QPA_PLATFORM: offscreen
-        run: pytest
+          QT_QUICK_BACKEND: software
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libegl1 libgl1
+          pytest
       - name: Verify runtime assets
         run: |
           python -c "import importlib.util,pathlib; p=pathlib.Path('.github/desktop/ci_prepare.py'); spec=importlib.util.spec_from_file_location('ci_prepare',p); m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); d=pathlib.Path('dist'); print(m.verify_archives(pathlib.Path('.'),next(d.glob('*.whl')),next(d.glob('*.tar.gz'))))"

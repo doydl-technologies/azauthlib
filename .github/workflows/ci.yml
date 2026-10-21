@@ -13,6 +13,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       QT_QPA_PLATFORM: ${{ startsWith(matrix.os, 'ubuntu') && 'offscreen' || '' }}
+      QT_QUICK_BACKEND: ${{ startsWith(matrix.os, 'ubuntu') && 'software' || '' }}
     strategy:
       fail-fast: false
       matrix:
@@ -31,6 +32,9 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
+      - name: Install Linux Qt runtime libraries
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libegl1 libgl1
       - run: python -m pip install --upgrade pip
       - run: python -m pip install -e ".[dev]"
       - run: pytest
