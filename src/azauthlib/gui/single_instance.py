@@ -88,9 +88,14 @@ class SingleInstance(QObject):
 
         def read_line():
             while not socket.canReadLine() and monotonic() < deadline:
-                if not socket.waitForReadyRead(wait_budget()):
+                socket.waitForReadyRead(wait_budget())
+                # A peer can close after sending its final reply. Qt may report
+                # that close as a failed wait even though the reply is buffered.
+                if socket.canReadLine():
+                    break
+                if socket.state() == QLocalSocket.LocalSocketState.UnconnectedState:
                     return b""
-            if socket.bytesAvailable() > 64:
+            if not socket.canReadLine() or socket.bytesAvailable() > 64:
                 return b""
             return bytes(socket.readLine()).strip()
 
@@ -121,9 +126,13 @@ class SingleInstance(QObject):
             socket.disconnected.connect(self._client_closed)
             timer = QTimer(socket)
             timer.setSingleShot(True)
-            timer.timeout.connect(socket.abort)
+            timer.timeout.connect(self._client_timeout)
             timer.start(3000)
             self._read(socket)  # Read data buffered before the readyRead handler was connected.
+
+    @Slot()
+    def _client_timeout(self):
+        self.sender().parent().abort()
 
     @Slot()
     def _client_ready(self):

@@ -54,6 +54,80 @@ guard.close()
 """
 
 
+@pytest.mark.parametrize(
+    "reply,delay,expected",
+    [
+        (b"ok\n", False, True),
+        (b"ok\n", True, True),
+        (b"x" * 65 + b"\n", False, False),
+        (b"ok", False, False),
+    ],
+)
+def test_forward_reads_buffered_reply_even_when_wait_reports_disconnect(
+    monkeypatch, reply, delay, expected
+):
+    from time import monotonic
+
+    from azauthlib.gui import single_instance
+
+    states = single_instance.QLocalSocket.LocalSocketState
+
+    class BufferedSocket:
+        LocalSocketState = states
+
+        def __init__(self):
+            self.buffer = b""
+            self.pending = b""
+            self.closed = False
+            self.delayed = delay
+
+        def connectToServer(self, _name):
+            pass
+
+        def waitForConnected(self, _timeout):
+            return True
+
+        def write(self, value):
+            self.pending = b"123\n" if value == b"hello\n" else reply
+
+        def flush(self):
+            pass
+
+        def canReadLine(self):
+            return b"\n" in self.buffer
+
+        def waitForReadyRead(self, _timeout):
+            if self.delayed:
+                self.delayed = False
+                return False
+            self.buffer += self.pending
+            self.closed = self.pending == reply
+            self.pending = b""
+            return False
+
+        def state(self):
+            return states.UnconnectedState if self.closed else states.ConnectedState
+
+        def bytesAvailable(self):
+            return len(self.buffer)
+
+        def readLine(self):
+            value, self.buffer = self.buffer, b""
+            return value
+
+        def abort(self):
+            self.closed = True
+
+    monkeypatch.setattr(single_instance, "QLocalSocket", BufferedSocket)
+    monkeypatch.setattr(
+        single_instance.platform_integration, "allow_foreground_activation", lambda _pid: None
+    )
+    assert (
+        SingleInstance._forward(SimpleNamespace(server_name="test-only"), monotonic() + 1)
+        is expected
+    )
+
+
 @pytest.fixture
 def qt_app():
     QQuickStyle.setStyle("Basic")
