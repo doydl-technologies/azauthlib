@@ -10,6 +10,7 @@ __pycache__/
 build/
 dist/
 .artifacts/
+/.github/release-notes/
 htmlcov/
 scripts/
 /src/azauthlib-beta-test/
