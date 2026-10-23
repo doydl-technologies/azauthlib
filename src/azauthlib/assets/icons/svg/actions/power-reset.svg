@@ -1,0 +1,35 @@
+
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 512 512"
+     width="512"
+     height="512">
+
+  <defs>
+    <!-- Increase radius to make the icon thinner -->
+    <filter id="thinner"
+            x="-10%"
+            y="-10%"
+            width="120%"
+            height="120%">
+      <feMorphology
+        in="SourceAlpha"
+        operator="erode"
+        radius="3"
+        result="thinShape"/>
+
+      <feFlood
+        flood-color="#FFFFFF"
+        result="iconColor"/>
+
+      <feComposite
+        in="iconColor"
+        in2="thinShape"
+        operator="in"/>
+    </filter>
+  </defs>
+
+  <path
+    fill="#FFFFFF"
+    filter="url(#thinner)"
+    d="M483.9 142.6C443.8 58 356.5 0 256 0 114.6 0 0 114.6 0 256s114.6 256 256 256 256-114.6 256-256h-51.2c0 56.6-22.9 107.7-60 144.8s-88.2 60-144.8 60-107.7-22.9-144.8-60-60-88.2-60-144.8 22.9-107.7 60-144.8 88.2-60 144.8-60c80.6 0 150 46.5 181.7 113.4zm-23.1-117v128h-128v51.2H512V25.6z"/>
+</svg>

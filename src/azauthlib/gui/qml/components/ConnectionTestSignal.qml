@@ -1,6 +1,7 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.VectorImage
+import "../theme"
 
 Item {
     id: root
@@ -16,10 +17,23 @@ Item {
             required property int index
             objectName: "connectionTestSignalFrame" + index
             anchors.fill: parent
-            visible: index === root.frameIndex
+            visible: index === root.frameIndex && !AccentTheme.customAccent
             source: Qt.resolvedUrl("../../../assets/animate/Multicolor-blue-white-podcast-line-" + index + ".svg")
             fillMode: VectorImage.PreserveAspectFit
             preferredRendererType: VectorImage.CurveRenderer
+        }
+    }
+    Repeater {
+        model: 4
+        Image {
+            required property int index
+            objectName: "connectionThemedSignalFrame" + index
+            anchors.fill: parent
+            visible: AccentTheme.customAccent && index === root.frameIndex
+            source: AccentTheme.customAccent ? AccentTheme.artwork("Multicolor-blue-white-podcast-line-" + index + ".svg") : ""
+            sourceSize: Qt.size(96, 96)
+            fillMode: Image.PreserveAspectFit
+            smooth: true; mipmap: true
         }
     }
     Timer {

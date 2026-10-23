@@ -9,6 +9,15 @@ import "../theme"
 FocusScope {
     id: root
     required property var appController
+    property bool selectionHidden: false
+    function selectedSpotlightSubject(mode, target) {
+        for (let i = 0; i < cards.count; ++i) {
+            const card = cards.itemAt(i)
+            if (card && card.providerId === selectedProvider)
+                return card.spotlightSubject(mode, target)
+        }
+        return null
+    }
     readonly property real designScale: Math.min(width / 1534, height / 918)
     readonly property real designX: (width - 1534 * designScale) / 2
     readonly property real designY: (height - 918 * designScale) / 2
@@ -53,7 +62,7 @@ FocusScope {
             title: "Azure Key Vault",
             size: 56,
             copy: "Securely access and manage secrets,\nkeys, and certificates.",
-            logo: "icon-azure-key-vault.svg"
+            logo: "subscriptions.svg"
         },
         {
             key: "dataverse",
@@ -67,14 +76,14 @@ FocusScope {
             title: "Azure Storage",
             size: 65,
             copy: "Access blobs, files, queues, and tables\nin Azure Storage.",
-            logo: "icon-azure-storage-account.svg"
+            logo: "storage-accounts.svg"
         },
         {
             key: "sql",
             title: "Azure SQL",
             size: 72,
             copy: "Connect to Azure SQL Database\nand manage your data.",
-            logo: "icon-azure-sql-database.svg"
+            logo: "sql-database.svg"
         },
         {
             key: "exchange",
@@ -143,6 +152,12 @@ FocusScope {
         id: helpTopics
     }
     Connections {
+        target: AccentTheme
+        function onShowInfoButtonsChanged() {
+            if (!AccentTheme.showInfoButtons && root.drawerTopic === "shortcut") root.closeAbout()
+        }
+    }
+    Connections {
         target: root.appController
         function onLegalDocumentsChanged() {
             if (["terms", "privacy"].includes(root.drawerTopic) &&
@@ -170,6 +185,7 @@ FocusScope {
             Item {
                 id: workspace
                 objectName: "providerWorkspace"
+                visible: !root.selectionHidden
                 width: parent.width - root.helpWidth * root.helpProgress
                 height: parent.height
                 Text {
@@ -194,7 +210,7 @@ FocusScope {
                     y: 76.96
                     width: parent.width - 72
                     text: "Select the Microsoft service you want to configure a connection for."
-                    color: "#9fbddd"
+                    color: AccentTheme.color("#9fbddd")
                     font.family: ConnectionTheme.body
                     font.pixelSize: 16
                 }
@@ -242,7 +258,8 @@ FocusScope {
                                 providerName: modelData.title
                                 summary: modelData.copy
                                 logoSize: modelData.size
-                                logoSource: Qt.resolvedUrl("../../../assets/logo/third-party/" + modelData.logo)
+                                // The image provider resolves each filename to its package-relative directory.
+                                logoSource: modelData.logo
                                 selected: root.selectedProvider === providerId
                                 onClicked: root.toggleProvider(providerId)
                                 onActiveFocusChanged: if (activeFocus)
@@ -256,20 +273,203 @@ FocusScope {
                         }
                     }
                 }
+                Row {
+                    objectName: "providerShortcutControls"
+                    x: 36
+                    y: parent.height - 28 - height
+                    height: 80
+                    spacing: 8
+                    visible: root.appController.shortcutSupported
+                    Button {
+                        id: shortcutButton
+                        objectName: "createAppShortcutButton"
+                        // Qt reports macOS as "osx". Leave the original SVGs
+                        // untouched and select each platform's complete set.
+                        property string platformName: Qt.platform.os
+                        readonly property string artworkPrefix: platformName === "osx"
+                            ? "Monocolor-Filled-Blue-Pink-shortcuts-ios"
+                            : platformName === "linux"
+                                ? "Monocolor-Filled-Purple-shortcuts-linux"
+                                : "Monocolor-Filled-Blue-shortcuts-win"
+                        property real hoverProgress: enabled && hovered ? 1 : 0
+                        property int hoverInDuration: 450
+                        property int hoverOutDuration: 550
+                        Behavior on hoverProgress {
+                            NumberAnimation {
+                                duration: ConnectionTheme.reducedMotion ? 0 :
+                                    (shortcutButton.enabled && shortcutButton.hovered ? shortcutButton.hoverInDuration : shortcutButton.hoverOutDuration)
+                                easing.type: Easing.InOutCubic
+                            }
+                        }
+                        property int pressDuration: 300
+                        property int releaseDuration: 400
+                        property bool pressVisualRequested: false
+                        property real pressProgress: pressVisualRequested ? 1 : 0
+                        Behavior on pressProgress {
+                            NumberAnimation {
+                                duration: ConnectionTheme.reducedMotion ? 0 :
+                                    (shortcutButton.pressVisualRequested ? shortcutButton.pressDuration : shortcutButton.releaseDuration)
+                                easing.type: Easing.InOutCubic
+                            }
+                        }
+                        onPressProgressChanged: {
+                            if (pressProgress >= 1 && pressVisualRequested && !down)
+                                shortcutReleaseHold.restart()
+                        }
+                        onDownChanged: {
+                            if (down) {
+                                shortcutReleaseHold.stop()
+                                pressVisualRequested = true
+                            } else if (ConnectionTheme.reducedMotion) {
+                                pressVisualRequested = false
+                            } else if (pressProgress >= 1) {
+                                // A quick tap still reaches the full sunken state
+                                // before smoothly returning; no action is delayed.
+                                shortcutReleaseHold.restart()
+                            }
+                        }
+                        onVisibleChanged: if (!visible) {
+                            shortcutReleaseHold.stop()
+                            pressVisualRequested = false
+                        }
+                        Timer {
+                            id: shortcutReleaseHold
+                            interval: 80
+                            onTriggered: if (!shortcutButton.down) shortcutButton.pressVisualRequested = false
+                        }
+                        Connections {
+                            target: ConnectionTheme
+                            function onReducedMotionChanged() {
+                                if (ConnectionTheme.reducedMotion) {
+                                    shortcutReleaseHold.stop()
+                                    shortcutButton.pressVisualRequested = shortcutButton.down
+                                }
+                            }
+                        }
+                        // Input targets change immediately; lighting and relief
+                        // interpolate independently in one premultiplied layer.
+                        readonly property string displayedArtwork: down ? "sunken" :
+                            enabled && hovered ? "hover" : "raised"
+                        readonly property real artworkLift: ConnectionTheme.reducedMotion ? 0 :
+                            -3 * hoverProgress * (1 - pressProgress)
+                        containmentMask: QtObject {
+                            function contains(point: point): bool {
+                                // SVG face geometry, excluding transparent padding,
+                                // drop shadow and outer glow. Track the moving face.
+                                const dx = point.x - shortcutButton.width * 0.5
+                                const cy = shortcutButton.height *
+                                    (57.2 + 2.8 * shortcutButton.pressProgress) / 120 + shortcutButton.artworkLift
+                                const dy = point.y - cy
+                                const radius = shortcutButton.width * 45.5 / 120
+                                return dx * dx + dy * dy <= radius * radius
+                            }
+                        }
+                        width: 80
+                        height: 80
+                        padding: 0
+                        enabled: root.enabled && !root.appController.shortcutBusy
+                        opacity: root.appController.shortcutBusy ? 0.37 : 1
+                        hoverEnabled: enabled
+                        focusPolicy: enabled ? Qt.StrongFocus : Qt.NoFocus
+                        text: root.appController.shortcutBusy ? "Creating shortcut…" : "Create app shortcut"
+                        Accessible.name: text
+                        Accessible.description: "Create a shortcut to launch azauthlib from your Desktop."
+                        Keys.onReturnPressed: if (enabled) clicked()
+                        onClicked: if (enabled) root.appController.createAppShortcut()
+                        HoverHandler {
+                            objectName: "providerShortcutPointer"
+                            enabled: shortcutButton.enabled
+                            cursorShape: Qt.PointingHandCursor
+                        }
+                        background: Rectangle {
+                            color: "transparent"
+                            radius: width / 2
+                            border.width: shortcutButton.visualFocus ? 1 : 0
+                            border.color: AccentTheme.color("#56d7ef")
+                        }
+                        contentItem: Item {
+                            transform: Translate {
+                                objectName: "providerShortcutHoverLift"
+                                // Move only the artwork, keeping the hit target
+                                // steady. Pressing smoothly settles it back down.
+                                y: shortcutButton.artworkLift
+                            }
+                            // Original SVGs supply textures only, never stacked
+                            // image items. The shader is the sole visible artwork.
+                            Image {
+                                id: shortcutRaisedImage
+                                objectName: "providerShortcutRaisedImage"
+                                anchors.fill: parent
+                                visible: false
+                                source: AccentTheme.customAccent ? AccentTheme.artwork(shortcutButton.artworkPrefix + "-raised.svg") : Qt.resolvedUrl("../../../assets/icons/svg/actions/relief/shortcuts/" + shortcutButton.artworkPrefix + "-raised.svg")
+                                sourceSize: Qt.size(240, 240)
+                                fillMode: Image.PreserveAspectFit
+                                smooth: true
+                                mipmap: true
+                            }
+                            Image {
+                                id: shortcutHoverImage
+                                objectName: "providerShortcutHoverImage"
+                                anchors.fill: parent
+                                visible: false
+                                source: AccentTheme.customAccent ? AccentTheme.artwork(shortcutButton.artworkPrefix + "-raised-Blue-highlight-ring.svg") : Qt.resolvedUrl("../../../assets/icons/svg/actions/relief/shortcuts/" + shortcutButton.artworkPrefix + "-raised-Blue-highlight-ring.svg")
+                                sourceSize: Qt.size(240, 240)
+                                fillMode: Image.PreserveAspectFit
+                                smooth: true
+                                mipmap: true
+                            }
+                            Image {
+                                id: shortcutSunkenImage
+                                objectName: "providerShortcutSunkenImage"
+                                anchors.fill: parent
+                                visible: false
+                                source: AccentTheme.customAccent ? AccentTheme.artwork(shortcutButton.artworkPrefix + "-sunken.svg") : Qt.resolvedUrl("../../../assets/icons/svg/actions/relief/shortcuts/" + shortcutButton.artworkPrefix + "-sunken.svg")
+                                sourceSize: Qt.size(240, 240)
+                                fillMode: Image.PreserveAspectFit
+                                smooth: true
+                                mipmap: true
+                            }
+                            ShaderEffect {
+                                objectName: "providerShortcutArtwork"
+                                anchors.fill: parent
+                                readonly property var raisedSource: shortcutRaisedImage
+                                readonly property var hoverSource: shortcutHoverImage
+                                readonly property var sunkenSource: shortcutSunkenImage
+                                readonly property real hoverAmount: shortcutButton.hoverProgress
+                                readonly property real pressAmount: shortcutButton.pressProgress
+                                fragmentShader: Qt.resolvedUrl("../shaders/shortcut-state.frag.qsb")
+                            }
+                        }
+                    }
+                    Item {
+                        visible: AccentTheme.showInfoButtons
+                        width: 21 * root.shelfScale
+                        height: parent.height
+                        ConnectionHelpButton {
+                            id: shortcutInfoButton
+                            objectName: "providerShortcutInfoButton"
+                            anchors.centerIn: parent
+                            scale: root.shelfScale
+                            text: "About creating an app shortcut"
+                            expanded: root.drawerTopic === "shortcut"
+                            onClicked: root.openTopic("shortcut", shortcutInfoButton)
+                        }
+                    }
+                }
                 Button {
                     id: continueButton
                     objectName: "providerContinueButton"
                     x: parent.width - 42 - width
                     y: parent.height - 28 - 71 + 8
-                    width: root.selectedProviderAvailable ? 204 : 260
+                    width: 204
                     height: 55
                     padding: 0
                     visible: root.selectedProvider.length > 0
                     enabled: visible && root.enabled && root.selectedProviderAvailable
                     hoverEnabled: enabled
-                    text: root.selectedProviderAvailable ? "Continue" : "Currently Unavailable"
+                    text: root.selectedProviderAvailable ? "Open" : "Currently Unavailable"
                     Accessible.name: root.selectedProviderAvailable ?
-                        "Continue to Microsoft Graph connections" :
+                        "Choose a Microsoft Graph connection" :
                         root.appController.selectedProviderName + " is currently unavailable"
                     Keys.onReturnPressed: if (enabled) clicked()
                     onClicked: if (root.selectedProviderAvailable) root.continued()
@@ -294,39 +494,19 @@ FocusScope {
                         focused: continueButton.visualFocus
                     }
                     contentItem: Item {
-                        Row {
-                            anchors.centerIn: parent
-                            spacing: 5
-
-                            Text {
-                                objectName: "providerContinueLabel"
-                                anchors.verticalCenter: parent.verticalCenter
-                                text: continueButton.text
-                                color: root.selectedProviderAvailable ? "#ffffff" : "#9aaac0"
-                                font.family: ConnectionTheme.body
-                                font.pointSize: 12                                
-                                font.weight: 750
-                            }
-
-
-                            Image {
-                                objectName: "providerContinueArrow"
-                                anchors.verticalCenter: parent.verticalCenter
-                                visible: root.selectedProviderAvailable
-                                width: 22
-                                height: 22
-
-                                source: Qt.resolvedUrl(
-                                    "../../../assets/icons/svg/navigation/arrow-round-forward.svg"
-                                )
-                                sourceSize: Qt.size(96, 96)
-                                fillMode: Image.PreserveAspectFit
-                                smooth: true
-                                mipmap: true
-                            }
-
+                        Text {
+                            objectName: "providerContinueLabel"
+                            // Center against the button itself without rounding
+                            // the text's position at odd control heights.
+                            x: (continueButton.width - width) / 2 - parent.x
+                            y: (continueButton.height - height) / 2 - parent.y
+                            text: continueButton.text
+                            color: root.selectedProviderAvailable ? "#ffffff" : "#9aaac0"
+                            font.family: ConnectionTheme.body
+                            font.pointSize: 12
+                            font.weight: 750
                         }
-                    }                    
+                    }
                 }
             }
             Item {
@@ -337,7 +517,7 @@ FocusScope {
                 anchors.bottom: parent.bottom
                 width: root.helpWidth * root.helpProgress
                 clip: true
-                visible: width > 0
+                visible: width > 0 && !root.selectionHidden
                 enabled: root.drawerOpen
                 ConnectionHelpShelf {
                     id: aboutShelf

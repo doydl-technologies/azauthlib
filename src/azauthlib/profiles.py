@@ -33,6 +33,7 @@ from typing import Any
 from uuid import uuid4
 
 from .appdata import ensure_private_directory, ensure_within, get_cache_dir, get_config_dir
+from .profile_avatars import normalized_profile_avatar
 
 DEFAULT_PROFILE_ID = "default"
 DEFAULT_PROFILE_NAME = "Default"
@@ -51,6 +52,7 @@ class Profile:
 
     id: str
     name: str
+    avatar: str = ""
 
 
 def _default_registry() -> dict[str, Any]:
@@ -106,7 +108,10 @@ def _validate_registry(value: Any) -> dict[str, Any]:
             raise ProfileStoreError("The azauthlib profile registry contains duplicate profiles.")
         ids.add(profile_id)
         names.add(folded_name)
-        profiles.append({"id": profile_id, "name": profile_name})
+        entry = {"id": profile_id, "name": profile_name}
+        if avatar := normalized_profile_avatar(raw_profile.get("avatar")):
+            entry["avatar"] = avatar
+        profiles.append(entry)
 
     active = value.get("active")
     if not profiles:
@@ -151,7 +156,7 @@ def _write_registry(registry: dict[str, Any]) -> None:
 
 
 def _profile_from_entry(entry: dict[str, str]) -> Profile:
-    return Profile(id=entry["id"], name=entry["name"])
+    return Profile(id=entry["id"], name=entry["name"], avatar=entry.get("avatar", ""))
 
 
 def list_profiles() -> tuple[Profile, ...]:
@@ -187,15 +192,25 @@ def active_profile() -> Profile:
     return resolve_profile()
 
 
-def create_profile(name: str, *, select: bool = True) -> Profile:
+def _validated_avatar(avatar: str) -> str:
+    if not isinstance(avatar, str) or (avatar and normalized_profile_avatar(avatar) != avatar):
+        raise ValueError("Choose an avatar from the available images.")
+    return avatar
+
+
+def create_profile(name: str, *, select: bool = True, avatar: str = "") -> Profile:
     """Create a profile; the first after an empty registry always becomes active."""
 
     normalized = _validated_name(name)
+    avatar = _validated_avatar(avatar)
     registry = _read_registry()
     if any(entry["name"].casefold() == normalized.casefold() for entry in registry["profiles"]):
         raise ValueError(f'A profile named "{normalized}" already exists.')
-    profile = Profile(id=uuid4().hex, name=normalized)
-    registry["profiles"].append({"id": profile.id, "name": profile.name})
+    profile = Profile(id=uuid4().hex, name=normalized, avatar=avatar)
+    entry = {"id": profile.id, "name": profile.name}
+    if avatar:
+        entry["avatar"] = avatar
+    registry["profiles"].append(entry)
     if select or registry["active"] is None:
         registry["active"] = profile.id
     _write_registry(registry)
@@ -213,10 +228,11 @@ def select_profile(profile: str | Profile) -> Profile:
     return selected
 
 
-def rename_profile(profile: str | Profile, name: str) -> Profile:
+def rename_profile(profile: str | Profile, name: str, *, avatar: str | None = None) -> Profile:
     """Rename a connection without changing its configuration/cache identity."""
 
     selected = resolve_profile(profile)
+    avatar = selected.avatar if avatar is None else _validated_avatar(avatar)
     normalized = _validated_name(name)
     registry = _read_registry()
     if any(
@@ -224,12 +240,34 @@ def rename_profile(profile: str | Profile, name: str) -> Profile:
         for entry in registry["profiles"]
     ):
         raise ValueError(f'A profile named "{normalized}" already exists.')
-    if normalized != selected.name:
+    if normalized != selected.name or avatar != selected.avatar:
         for entry in registry["profiles"]:
             if entry["id"] == selected.id:
                 entry["name"] = normalized
+                if avatar:
+                    entry["avatar"] = avatar
+                else:
+                    entry.pop("avatar", None)
         _write_registry(registry)
-    return Profile(selected.id, normalized)
+    return Profile(selected.id, normalized, avatar)
+
+
+def set_profile_avatar(profile: str | Profile, avatar: str) -> Profile:
+    """Persist display artwork without touching credentials, caches or selection."""
+    avatar = _validated_avatar(avatar)
+    selected = resolve_profile(profile)
+    if selected.avatar == avatar:
+        return selected
+    registry = _read_registry()
+    for entry in registry["profiles"]:
+        if entry["id"] == selected.id:
+            if avatar:
+                entry["avatar"] = avatar
+            else:
+                entry.pop("avatar", None)
+            break
+    _write_registry(registry)
+    return Profile(selected.id, selected.name, avatar)
 
 
 def remove_profile(profile: str | Profile) -> Profile:

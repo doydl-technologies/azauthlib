@@ -46,6 +46,7 @@ from PySide6.QtGui import (
 from PySide6.QtQml import QQmlApplicationEngine, QQmlComponent
 from PySide6.QtQuick import QQuickTextDocument, QQuickWindow
 from PySide6.QtQuickControls2 import QQuickStyle
+from shiboken6 import isValid
 
 from .. import profiles
 from ..appdata import get_config_dir
@@ -68,7 +69,19 @@ from .platform_integration import apply_title_bar as _apply_native_title_bar
 from .platform_integration import apply_titlebar_icon as _apply_windows_titlebar_icon
 from .platform_integration import disable_maximizing as _disable_windows_maximizing
 from .single_instance import SingleInstance
-from .theme import ThemeMode, load_zoom_preference, save_zoom_preference
+from .theme import (
+    ACCENT_PRESETS,
+    SERVICE_ANIMATIONS,
+    ThemeMode,
+    load_appearance_preferences,
+    load_startup_preferences,
+    load_visited_services,
+    load_zoom_preference,
+    record_service_visit,
+    save_appearance_preferences,
+    save_settings_preferences,
+    save_zoom_preference,
+)
 
 _TENANT_ALIAS = re.compile(r"^(common|organizations|consumers|[A-Za-z0-9.-]+\.[A-Za-z]{2,})$")
 
@@ -77,12 +90,13 @@ _APP_TITLE = "azauthlib"
 _TITLEBAR_ICON_NAME = "azauthlib-titlebar.ico"
 _TASKBAR_ICON_NAME = "azauthlib-taskbar.ico"
 
-# Header logo shown on Home and Connections through logoUrl.
 _HEADER_LOGO = "logo/svg/azauthlib-wordmark-qt.svg"
 
 _STARTUP_LOGO = "logo/svg/azauthlib-wordmark-qt.svg"
 
-_AUTH_METHODS = frozenset({"interactive", "device_code", "client_credentials"})
+_AUTH_METHODS = frozenset(
+    {"interactive", "device_code", "client_credentials", "client_certificate"}
+)
 _PROVIDERS = {
     "graph": "Microsoft Graph",
     "keyvault": "Azure Key Vault",
@@ -149,9 +163,18 @@ class ConfigurationController(QObject):
     """Bridge QML presentation state to azauthlib validation and secure persistence."""
 
     themeChanged = Signal()
+    appearanceChanged = Signal()
+    startupPreferencesChanged = Signal()
+    preferencesErrorChanged = Signal()
+    warmStartStatusChanged = Signal()
+    _warmCachePrepared = Signal(int, bool)
     zoomChanged = Signal()
     providerChanged = Signal()
     legalDocumentsChanged = Signal()
+    connectionPreparationChanged = Signal()
+    serviceWarmupChanged = Signal()
+    _connectionProgress = Signal(int, int, str)
+    _connectionsPrepared = Signal(int, object, str)
     authMethodChanged = Signal()
     profileListChanged = Signal()
     currentProfileChanged = Signal()
@@ -165,9 +188,46 @@ class ConfigurationController(QObject):
     shortcutBusyChanged = Signal()
     _shortcutFinished = Signal(str, bool)
 
-    def __init__(self, resources: PackageResources, *, startup_state=None) -> None:
+    def __init__(
+        self, resources: PackageResources, *, startup_state=None, defer_connections=True
+    ) -> None:
         super().__init__()
         self._resources = resources
+        self._startup_preferences = load_startup_preferences(
+            directory=profiles.get_config_dir(create=False)
+        )
+        self._preferences_error = ""
+        self._warm_cache_job = 0
+        self._warm_cache_cancel = Event()
+        self._warm_start_status = "idle"
+        self._warmCachePrepared.connect(self._finish_warm_cache_preparation)
+        app = QGuiApplication.instance()
+        if app is not None:
+            app.aboutToQuit.connect(self.cancelWarmCachePreparation)
+        self._appearance_preferences = (
+            startup_state["appearancePreferences"]
+            if startup_state and "appearancePreferences" in startup_state
+            else load_appearance_preferences(directory=profiles.get_config_dir(create=False))
+        )
+        self._connections_deferred = defer_connections and not (
+            startup_state and "profiles" in startup_state
+        )
+        self._connections_ready = not self._connections_deferred
+        self._connection_background = False
+        self._background_connections_ready = False
+        self._background_services_attempted = set()
+        self._visited_services = load_visited_services(
+            directory=profiles.get_config_dir(create=False)
+        )
+        self._connections_loading = False
+        self._connections_error = ""
+        self._connection_progress = 100 if self._connections_ready else 0
+        self._connection_message = ""
+        self._connection_job = 0
+        self._connection_cancel = Event()
+        self._qml_engine = None
+        self._connectionProgress.connect(self._report_connection_progress)
+        self._connectionsPrepared.connect(self._finish_connection_preparation)
         self._shortcut_busy = False
         self._shortcutFinished.connect(self._finish_shortcut)
         # Session navigation state, separate from saved credentials/profiles.
@@ -182,19 +242,31 @@ class ConfigurationController(QObject):
             self._legal_documents = legal["documents"]
             self._legal_document_urls = legal["urls"]
         # Cache this while the splash is visible, not on the first About click.
-        self._about_markdown = resources.path(
-            "assets", "docs", "legal", "INDEPENDENCE_AND_NOTICES.md"
-        ).read_text(encoding="utf-8")
+        self._about_markdown = (
+            startup_state["aboutMarkdown"]
+            if startup_state and "aboutMarkdown" in startup_state
+            else resources.path("assets", "docs", "legal", "INDEPENDENCE_AND_NOTICES.md").read_text(
+                encoding="utf-8"
+            )
+        )
         self._theme: ThemeMode = "dark"
         self._zoom_percent = (
             startup_state["zoomPercent"]
-            if startup_state
+            if startup_state and "zoomPercent" in startup_state
             else load_zoom_preference(directory=profiles.get_config_dir(create=False))
         )
-        self._profiles = startup_state["profiles"] if startup_state else list(list_profiles())
+        self._profiles = (
+            []
+            if self._connections_deferred
+            else (
+                startup_state["profiles"]
+                if startup_state and "profiles" in startup_state
+                else list(list_profiles())
+            )
+        )
         self._current_profile = (
             startup_state["active"]
-            if startup_state
+            if startup_state and "active" in startup_state
             else active_profile()
             if self._profiles
             else None
@@ -206,19 +278,373 @@ class ConfigurationController(QObject):
         self._has_stored_secret = False
         self._errors = dict.fromkeys(("tenant", "client", "secret"), "")
         self._close_after_dialog = False
-        if startup_state:
+        if startup_state and "values" in startup_state:
             self._apply_profile_data(startup_state["values"], startup_state["hasSecret"])
-        else:
+        elif not self._connections_deferred:
             self._refresh_profile_data()
         from .connections import ConnectionManagerController
 
-        self._connection_manager = ConnectionManagerController(self, startup_state=startup_state)
+        self._connection_manager = ConnectionManagerController(
+            self,
+            startup_state=startup_state if startup_state and "profiles" in startup_state else None,
+            deferred=self._connections_deferred,
+        )
         self._connection_manager.storeChanged.connect(self._reload_profiles)
         self._connection_manager.activationRequested.connect(self.selectProfile)
 
     @Property(QObject, constant=True)
     def connectionManager(self) -> QObject:
         return self._connection_manager
+
+    @Property("QVariantMap", notify=appearanceChanged)
+    def appearancePreferences(self):
+        return dict(self._appearance_preferences)
+
+    @Property("QVariantMap", notify=startupPreferencesChanged)
+    def startupPreferences(self):
+        return dict(self._startup_preferences)
+
+    @Property(str, notify=preferencesErrorChanged)
+    def preferencesError(self):
+        return self._preferences_error
+
+    @Property(bool, constant=True)
+    def loginStartupSupported(self):
+        from .login_startup import supported
+
+        return supported()
+
+    @Property(str, notify=warmStartStatusChanged)
+    def warmStartStatus(self):
+        return self._warm_start_status
+
+    def _prepare_warm_cache(self):
+        enabled = self._startup_preferences["warm_start"]
+        if enabled and self._warm_start_status == "preparing":
+            return
+        self.cancelWarmCachePreparation()
+        self._warm_cache_job += 1
+        job = self._warm_cache_job
+        self._warm_cache_cancel = Event()
+        cancel = self._warm_cache_cancel
+        provider = self._qml_engine.imageProvider("providerlogos") if self._qml_engine else None
+        snapshots = provider.configure_warm_start(enabled) if provider is not None else []
+        self._warm_start_status = "preparing" if enabled else "idle"
+        self.warmStartStatusChanged.emit()
+        if not enabled:
+            return
+
+        def prepare():
+            from .startup_cache import prepare_warm_cache
+
+            # Own the resource lifetime on the worker; closing the UI's resource
+            # stack must not invalidate paths while a cache write is finishing.
+            resources = PackageResources()
+            try:
+                ready = prepare_warm_cache(resources, snapshots, cancel.is_set)
+            except Exception:
+                ready = False  # Optional preparation must not undo a successful Settings save.
+            finally:
+                resources.close()
+            if not cancel.is_set():
+                with suppress(RuntimeError):
+                    self._warmCachePrepared.emit(job, ready)
+
+        try:
+            self._warm_cache_thread = Thread(
+                target=prepare, daemon=True, name="azauthlib-warm-cache"
+            )
+            self._warm_cache_thread.start()
+        except (OSError, RuntimeError):
+            self._warm_start_status = "unavailable"
+            self.warmStartStatusChanged.emit()
+
+    @Slot(int, bool)
+    def _finish_warm_cache_preparation(self, job, ready):
+        if job != self._warm_cache_job or self._warm_cache_cancel.is_set():
+            return
+        self._warm_start_status = "ready" if ready else "unavailable"
+        self.warmStartStatusChanged.emit()
+
+    @Slot()
+    def cancelWarmCachePreparation(self):
+        self._warm_cache_cancel.set()
+
+    @Slot(str, bool, str, bool, bool, bool, result=bool)
+    def savePreferences(
+        self, accent, show_info, service_animation, warm_start, adaptive_splash, launch_at_login
+    ):
+        """One Settings transaction, including reversible user login registration."""
+        from .login_startup import apply_login_startup
+        from .shortcuts import ShortcutError
+
+        self._preferences_error = ""
+        self.preferencesErrorChanged.emit()
+        startup = {
+            "warm_start": warm_start,
+            "adaptive_splash": adaptive_splash,
+            "launch_at_login": launch_at_login,
+        }
+        if startup == self._startup_preferences:
+            return self.saveAppearancePreferences(accent, show_info, service_animation)
+        if (
+            accent not in ACCENT_PRESETS
+            or type(show_info) is not bool
+            or service_animation not in SERVICE_ANIMATIONS
+            or any(type(value) is not bool for value in startup.values())
+            or self._connection_manager.editing
+            or self._connection_manager.testing
+            or (self._connections_loading and not self._connection_background)
+        ):
+            return False
+        rollback = None
+        try:
+            if launch_at_login != self._startup_preferences["launch_at_login"]:
+                rollback = apply_login_startup(launch_at_login)
+            if not save_settings_preferences(
+                accent,
+                show_info,
+                service_animation,
+                startup,
+                directory=profiles.get_config_dir(create=False),
+            ):
+                raise OSError("Preferences could not be saved")
+        except (OSError, RuntimeError, ValueError, ShortcutError):
+            self._preferences_error = (
+                "Preferences could not be saved. Check that the app is still installed "
+                "in this location and that your account can change login-startup settings."
+            )
+            if rollback is not None:
+                try:
+                    rollback()
+                except (OSError, RuntimeError):
+                    self._preferences_error += (
+                        " The login-startup change could not be undone. "
+                        "Check your operating system's startup-app settings."
+                    )
+            self.preferencesErrorChanged.emit()
+            return False
+        if startup["warm_start"] != self._startup_preferences["warm_start"]:
+            self._background_services_attempted.clear()
+        self._startup_preferences = startup
+        if not startup["warm_start"]:
+            self.discardBackgroundConnections()
+        self._appearance_preferences = load_appearance_preferences(
+            directory=profiles.get_config_dir(create=False)
+        )
+        self.startupPreferencesChanged.emit()
+        self.serviceWarmupChanged.emit()
+        self.appearanceChanged.emit()
+        self._prepare_warm_cache()
+        return True
+
+    @Slot(str, bool, result=bool)
+    @Slot(str, bool, str, result=bool)
+    def saveAppearancePreferences(
+        self, accent: str, show_info: bool, service_animation=None
+    ) -> bool:
+        if (
+            self._connection_manager.editing
+            or self._connection_manager.testing
+            or (self._connections_loading and not self._connection_background)
+        ):
+            return False
+        if not save_appearance_preferences(
+            accent, show_info, service_animation, directory=profiles.get_config_dir(create=False)
+        ):
+            return False
+        self._appearance_preferences = load_appearance_preferences(
+            directory=profiles.get_config_dir(create=False)
+        )
+        self.appearanceChanged.emit()
+        if self._startup_preferences["warm_start"]:
+            self._prepare_warm_cache()
+        return True
+
+    @Property(bool, constant=True)
+    def connectionsDeferred(self):
+        return self._connections_deferred
+
+    @Property(bool, notify=connectionPreparationChanged)
+    def connectionsReady(self):
+        return self._connections_ready
+
+    @Property(bool, notify=connectionPreparationChanged)
+    def connectionsLoading(self):
+        return self._connections_loading
+
+    @Property(str, notify=connectionPreparationChanged)
+    def connectionsError(self):
+        return self._connections_error
+
+    @Property(int, notify=connectionPreparationChanged)
+    def connectionLoadProgress(self):
+        return self._connection_progress
+
+    @Property(str, notify=connectionPreparationChanged)
+    def connectionLoadMessage(self):
+        return self._connection_message
+
+    @Property(bool, notify=connectionPreparationChanged)
+    def connectionsBackgroundPreparing(self):
+        return self._connection_background
+
+    @Property(bool, notify=serviceWarmupChanged)
+    def canWarmVisitedService(self):
+        return (
+            self._startup_preferences["warm_start"]
+            and self._selected_provider == "graph"
+            and self._selected_provider in self._visited_services
+            and self._selected_provider not in self._background_services_attempted
+            and not self._connections_ready
+            and not self._connections_loading
+        )
+
+    @Slot()
+    def recordServiceVisit(self):
+        if self._selected_provider != "graph":
+            return
+        if record_service_visit("graph", directory=profiles.get_config_dir(create=False)):
+            self._visited_services = load_visited_services(
+                directory=profiles.get_config_dir(create=False)
+            )
+            self.serviceWarmupChanged.emit()
+
+    @Slot()
+    def prepareVisitedService(self):
+        if not self.canWarmVisitedService:
+            return
+        if self._connection_manager.editing or self._connection_manager.testing:
+            return
+        self._background_services_attempted.add(self._selected_provider)
+        self._start_connection_preparation(background=True)
+
+    @Slot()
+    def discardBackgroundConnections(self):
+        if self._connection_background:
+            self.cancelConnectionPreparation()
+        if self._background_connections_ready:
+            self._background_connections_ready = False
+            self._connections_ready = False
+            self._connection_manager.discard_prepared_state()
+            self.connectionPreparationChanged.emit()
+            self.serviceWarmupChanged.emit()
+
+    @Slot()
+    def prepareConnections(self):
+        """Service-selection phase: no profile, keyring or avatar work in the splash."""
+        refresh = self._background_connections_ready
+        if self._connection_background:
+            self.cancelConnectionPreparation()
+        if (self._connections_ready and not refresh) or self._connections_loading:
+            return
+        self._start_connection_preparation(background=False)
+
+    def _start_connection_preparation(self, *, background):
+        if not background and self._background_connections_ready:
+            self._connection_manager.discard_prepared_state()
+        self._connection_job += 1
+        job = self._connection_job
+        self._connection_cancel = cancel = Event()
+        self._connections_loading = True
+        self._connections_ready = False
+        self._connection_background = background
+        self._connections_error = ""
+        self._connection_progress = 0
+        self._connection_message = "Initializing runtime context…"
+        self.connectionPreparationChanged.emit()
+        self.serviceWarmupChanged.emit()
+
+        def report(value, message):
+            if cancel.is_set():
+                raise InterruptedError()
+            self._connectionProgress.emit(job, value, message)
+
+        def prepare():
+            try:
+                state = (
+                    prepare_connections_state(report, background=True)
+                    if background
+                    else prepare_connections_state(report)
+                )
+                if avatar_provider is not None:
+                    avatar_provider.preload(
+                        lambda done, total: report(
+                            75 + int(12 * done / total), "Priming visual caches…"
+                        ),
+                        cancel.is_set,
+                    )
+                if not cancel.is_set():
+                    self._connectionsPrepared.emit(job, state, "")
+            except InterruptedError:
+                pass
+            except Exception:
+                with suppress(RuntimeError):
+                    self._connectionsPrepared.emit(
+                        job,
+                        None,
+                        "Connections could not be loaded. "
+                        "Check saved files and secure storage, then retry.",
+                    )
+
+        try:
+            from .svg_images import ensure_image_providers
+
+            avatar_provider = (
+                ensure_image_providers(self._qml_engine, self._resources)
+                if self._qml_engine is not None
+                else None
+            )
+            Thread(target=prepare, daemon=True, name="azauthlib-service-selection").start()
+        except Exception:
+            self._finish_connection_preparation(
+                job, None, "Unable to start loading connections. Please retry."
+            )
+
+    @Slot(int, int, str)
+    def _report_connection_progress(self, job, value, message):
+        if job != self._connection_job or self._connection_cancel.is_set():
+            return
+        self._connection_progress = max(self._connection_progress, min(90, value))
+        self._connection_message = message
+        self.connectionPreparationChanged.emit()
+
+    @Slot(int, object, str)
+    def _finish_connection_preparation(self, job, state, error):
+        if job != self._connection_job or self._connection_cancel.is_set():
+            return
+        self._connections_loading = False
+        background = self._connection_background
+        self._connection_background = False
+        if state is None:
+            self._connections_error = error
+            self._connection_message = "Connections could not be loaded."
+        else:
+            self._profiles = state["profiles"]
+            self._current_profile = state["active"]
+            self._apply_profile_data(state["values"], state["hasSecret"])
+            self.profileListChanged.emit()
+            self.currentProfileChanged.emit()
+            self._connection_manager.install_prepared_state(state)
+            self._connections_ready = True
+            self._background_connections_ready = background
+            self._connection_progress = 90
+            self._connection_message = "Composing the render graph…"
+        self.connectionPreparationChanged.emit()
+        self.serviceWarmupChanged.emit()
+
+    @Slot()
+    def cancelConnectionPreparation(self):
+        if not self._connections_loading:
+            return
+        self._connection_cancel.set()
+        self._connection_job += 1
+        self._connections_loading = False
+        self._connection_background = False
+        self._connection_progress = 0
+        self._connection_message = ""
+        self.connectionPreparationChanged.emit()
+        self.serviceWarmupChanged.emit()
 
     @Property(bool, constant=True)
     def shortcutSupported(self) -> bool:
@@ -286,8 +712,11 @@ class ConfigurationController(QObject):
         if provider and provider not in _PROVIDERS:
             return False
         if provider != self._selected_provider:
+            if self._connection_background:
+                self.cancelConnectionPreparation()
             self._selected_provider = provider
             self.providerChanged.emit()
+            self.serviceWarmupChanged.emit()
         return True
 
     @Property(int, notify=zoomChanged)
@@ -329,7 +758,7 @@ class ConfigurationController(QObject):
             self._saved_auth_method,
         ):
             self._activate_profile(active)
-        elif active.name != self._current_profile.name:
+        elif active != self._current_profile:
             self._current_profile = active
             self.currentProfileChanged.emit()
 
@@ -557,6 +986,8 @@ class ConfigurationController(QObject):
             return False
         if not validate_client_id(client_id.strip()):
             return False
+        if auth_method == "client_certificate":
+            return False  # Certificate edits use the validated Connections Manager editor.
         if auth_method != "client_credentials":
             return True
         if validate_client_secret(client_secret):
@@ -570,6 +1001,14 @@ class ConfigurationController(QObject):
         tenant_id = tenant_id.strip()
         client_id = client_id.strip()
         self._clear_errors()
+
+        if self._auth_method == "client_certificate":
+            self._show_dialog(
+                "Certificate connection",
+                "Use the Connections Manager to edit and validate certificate credentials.",
+                "information",
+            )
+            return
 
         if self._current_profile is None:
             self._show_dialog(
@@ -771,6 +1210,9 @@ def create_startup_splash(engine: QQmlApplicationEngine, resources: PackageResou
     """Show only the minimal splash; never read profiles or secure storage here."""
     app = QGuiApplication.instance()
     configure_application_identity(app, resources)
+    from .svg_images import ensure_accent_theme
+
+    ensure_accent_theme(engine, resources)
     qml_root = resources.path("gui", "qml", "Main.qml").parent
     engine.addImportPath(str(qml_root))
     component = QQmlComponent(
@@ -795,40 +1237,85 @@ def create_startup_splash(engine: QQmlApplicationEngine, resources: PackageResou
     return splash
 
 
-def prepare_startup_state(report):
-    """Plain data prepared on a worker; Qt controllers stay on the GUI thread."""
+def prepare_startup_state(report, resources):
+    """Splash scope: shared display/legal content only, never connection data."""
+    from .legal_terms import load_legal_documents
+
+    appearance = load_appearance_preferences(directory=profiles.get_config_dir(create=False))
+    zoom = load_zoom_preference(directory=profiles.get_config_dir(create=False))
+    report(35, "Display preferences loaded")
+    startup = load_startup_preferences(directory=profiles.get_config_dir(create=False))
+    from .startup_cache import load_shared_content, save_shared_content
+
+    cached = load_shared_content(resources) if startup["warm_start"] else None
+    from .legal_terms import POLICY_FILES
+
+    legal = (
+        {
+            "documents": cached["legalDocuments"],
+            "urls": {
+                topic: resources.path("assets", "docs", "legal", name).resolve().as_uri()
+                for topic, name in POLICY_FILES.items()
+            },
+        }
+        if cached
+        else load_legal_documents(resources)
+    )
+    report(60, "Terms of Use and Privacy Policy prepared")
+    about = (
+        cached["aboutMarkdown"]
+        if cached
+        else resources.path("assets", "docs", "legal", "INDEPENDENCE_AND_NOTICES.md").read_text(
+            encoding="utf-8"
+        )
+    )
+    if startup["warm_start"] and cached is None:
+        save_shared_content(resources, legal["documents"], about)
+    report(80, "About azauthlib and shared resources prepared")
+    return {
+        "appearancePreferences": appearance,
+        "zoomPercent": zoom,
+        "legalDocuments": legal["documents"],
+        "legalDocumentUrls": legal["urls"],
+        "aboutMarkdown": about,
+    }
+
+
+def prepare_connections_state(report, *, background=False):
+    """Service-selection worker data; Qt objects are installed on the GUI thread."""
     # Percentages are weighted startup milestones, not an elapsed-time estimate.
     from .connection_results import ConnectionResults
 
     saved = list(list_profiles())
     active = active_profile() if saved else None
-    report(35, "Saved connections loaded")
+    report(35, "Reconciling persisted state…")
     values = (
         load_public_configuration(profile=active.id) if active else {"auth_method": "interactive"}
     )
-    report(50, "Connection settings loaded")
+    report(50, "Aligning execution parameters…")
     # Match normal controller behavior if optional secure storage is unavailable.
     try:
-        stored = has_stored_secret(values.get("client_id")) if active else False
+        stored = has_stored_secret(values.get("client_id")) if active and not background else False
     except CredentialStoreError:
         stored = False
-    report(65, "Secure storage checked")
+    report(65, "Resolving secure references…")
     results = ConnectionResults()
     editor = (
         {
             "id": active.id,
             "name": active.name,
+            "avatar": active.avatar,
             "tenant": values.get("tenant_id") or "",
             "client": values.get("client_id") or "",
             "method": values["auth_method"],
             "hasSecret": stored,
-            "testResult": results.state(active.id, values),
+            "certificate": values.get("certificate") or {},
+            "testResult": results.state(active.id, values) if not background else {},
         }
         if active
         else {}
     )
-    zoom = load_zoom_preference(directory=profiles.get_config_dir(create=False))
-    report(75, "Test history and display preferences loaded")
+    report(75, "Reconstituting session state…")
     return {
         "profiles": saved,
         "active": active,
@@ -836,12 +1323,11 @@ def prepare_startup_state(report):
         "hasSecret": stored,
         "results": results,
         "editor": editor,
-        "zoomPercent": zoom,
     }
 
 
 class StartupBootstrap(QObject):
-    """Start after the first splash frame, then report completed startup stages."""
+    """Prepare shared state with a splash-first or load-time-adaptive presentation."""
 
     _progress = Signal(int, str)
     _prepared = Signal(object, str)
@@ -853,12 +1339,88 @@ class StartupBootstrap(QObject):
         self._cancelled = Event()
         self._running = False
         self._scheduled = False
+        self._adaptive = splash is None
+        self._building_ui = False
+        self._shared_prepared = Event()
+        self._splash_hold_active = False
+        self._splash_frame_seen = False
+        self._last_progress = (0, "Preparing application…")
+        self._splash_timer = QTimer(self)
+        self._splash_timer.setSingleShot(True)
+        self._splash_timer.setInterval(350)
+        self._splash_timer.timeout.connect(self._show_delayed_splash)
+        self._splash_hold_timer = QTimer(self)
+        self._splash_hold_timer.setSingleShot(True)
+        self._splash_hold_timer.setInterval(400)
+        self._splash_hold_timer.timeout.connect(self._release_splash_hold)
         self._progress.connect(self._set_progress)
         self._prepared.connect(self._finish)
-        splash.retryRequested.connect(self.start)
-        splash.abortRequested.connect(self.abort)
+        if splash is not None:
+            self._connect_splash()
+
+    def _connect_splash(self):
+        self.splash.retryRequested.connect(self.start)
+        self.splash.abortRequested.connect(self.abort)
+
+    @Slot()
+    def _show_delayed_splash(self, force=False):
+        if self._cancelled.is_set() or (
+            self.window is not None and self.window.property("startupRevealed")
+        ):
+            return
+        if not force and (
+            self._building_ui or (self._shared_prepared.is_set() and self.window is None)
+        ):
+            # A due timer can be delivered by processEvents inside the QML
+            # loader. Never create a splash during that almost-ready handoff.
+            if not self._building_ui:
+                self._splash_timer.start()
+            return
+        if self.splash is None:
+            try:
+                self.splash = create_startup_splash(self.engine, self.resources)
+            except (OSError, RuntimeError):
+                # A broken fallback must not leave an invisible process alive.
+                print("The azauthlib startup interface could not be loaded.", file=sys.stderr)
+                self.shutdown()
+                self.app.exit(1)
+                return
+            self._connect_splash()
+            self._splash_hold_active = True
+            # Failsafe if a render backend never presents a frame.
+            self._splash_hold_timer.start(2000)
+            self.splash.frameSwapped.connect(self._first_adaptive_splash_frame)
+            self._set_progress(*self._last_progress)
+            if self.window is not None:
+                self.window.setProperty("startupSplashHold", True)
+                self.window.setProperty("startupSplash", self.splash)
+
+    @Slot()
+    def _first_adaptive_splash_frame(self):
+        if self._splash_frame_seen:
+            return
+        self._splash_frame_seen = True
+        self.splash.frameSwapped.disconnect(self._first_adaptive_splash_frame)
+        self._splash_hold_timer.start(400)
+
+    @Slot()
+    def _release_splash_hold(self):
+        self._splash_hold_active = False
+        if self.window is not None:
+            self.window.setProperty("startupSplashHold", False)
+
+    def _show_error(self, message):
+        self._splash_timer.stop()
+        self._show_delayed_splash(force=True)
+        if self.splash is not None:
+            self.splash.setProperty("statusText", message)
+            self.splash.setProperty("failed", True)
 
     def start_after_first_frame(self):
+        if self._adaptive:
+            self._splash_timer.start()
+            QTimer.singleShot(0, self.start)
+            return
         # processEvents alone does not guarantee that Windows has presented it.
         self.splash.frameSwapped.connect(self._first_frame)
         self.splash.update()
@@ -875,15 +1437,19 @@ class StartupBootstrap(QObject):
     def _set_progress(self, value, message):
         if self._cancelled.is_set():
             return
-        self.splash.setProperty("progress", value)
-        self.splash.setProperty("statusText", message)
+        self._last_progress = (value, message)
+        if self.splash is not None:
+            self.splash.setProperty("progress", value)
+            self.splash.setProperty("statusText", message)
 
     @Slot()
     def start(self):
         if self._running or self._cancelled.is_set() or self.window is not None:
             return
         self._running = True
-        self.splash.setProperty("failed", False)
+        self._shared_prepared.clear()
+        if self.splash is not None:
+            self.splash.setProperty("failed", False)
         self._set_progress(0, "Checking application instance…")
 
         def report(value, message):
@@ -894,15 +1460,9 @@ class StartupBootstrap(QObject):
         def prepare():
             try:
                 report(10, "Application instance checked")
-                state = prepare_startup_state(report)
-                from .legal_terms import load_legal_documents
-
-                report(77, "Loading bundled Terms of Use and Privacy Policy…")
-                legal = load_legal_documents(self.resources)
-                state["legalDocuments"] = legal["documents"]
-                state["legalDocumentUrls"] = legal["urls"]
-                report(80, "Local legal notices prepared")
+                state = prepare_startup_state(report, self.resources)
                 if not self._cancelled.is_set():
+                    self._shared_prepared.set()
                     self._prepared.emit(state, "")
             except InterruptedError:
                 pass
@@ -910,10 +1470,15 @@ class StartupBootstrap(QObject):
                 # Exception text may contain credentials or private filesystem details.
                 with suppress(RuntimeError):
                     self._prepared.emit(
-                        None, "Startup failed. Check saved connections and secure storage."
+                        None, "Shared application resources could not be loaded. Please retry."
                     )
 
         try:
+            from .svg_images import ensure_image_providers
+
+            # Qt objects stay on the GUI thread; shared preparation runs on
+            # the worker. Adaptive startup need not create a splash at all.
+            ensure_image_providers(self.engine, self.resources, include_avatars=False)
             Thread(target=prepare, daemon=True, name="azauthlib-startup").start()
         except RuntimeError:
             self._finish(None, "Unable to start loading. Please retry.")
@@ -924,17 +1489,37 @@ class StartupBootstrap(QObject):
         if self._cancelled.is_set():
             return
         if state is None:
-            self.splash.setProperty("statusText", error)
-            self.splash.setProperty("failed", True)
+            self._show_error(error)
             return
+        self._building_ui = True
+        self._splash_timer.stop()
         try:
             self.controller = ConfigurationController(self.resources, startup_state=state)
             self.controller.quitRequested.connect(self.app.quit)
             self.app.aboutToQuit.connect(self.controller.connectionManager.cancelTest)
-            self._set_progress(82, "Application controls prepared")
+            self.app.aboutToQuit.connect(self.controller.cancelConnectionPreparation)
+            self._set_progress(87, "Application controls prepared")
             self.window = load_configuration_qml(
-                self.engine, self.resources, self.controller, splash=self.splash
+                self.engine,
+                self.resources,
+                self.controller,
+                splash=self.splash,
+                show_splash=self.splash is not None,
+                skip_startup_minimum=self._adaptive,
+                hold_startup_splash=self._splash_hold_active,
             )
+            self.window.setProperty("startupSplashHold", self._splash_hold_active)
+            # A timer may have created the splash while the loader processed
+            # queued events; attach that same window before the readiness gate.
+            if self.splash is not None and not self.window.property("startupRevealed"):
+                self.window.setProperty("startupSplash", self.splash)
+            self.window.startupRevealRequested.connect(self._splash_timer.stop)
+            if (
+                self._adaptive
+                and self.splash is None
+                and not self.window.property("startupRevealed")
+            ):
+                self._splash_timer.start()
             _disable_windows_maximizing(self.window)
             _apply_native_title_bar(self.window, dark=self.controller.theme == "dark")
             _apply_windows_titlebar_icon(
@@ -950,21 +1535,30 @@ class StartupBootstrap(QObject):
                 self.window.close()
                 self.window.deleteLater()
                 self.window = None
-                self.engine.setIncubationController(self.splash.incubationController())
+                self.engine.setIncubationController(
+                    self.splash.incubationController() if self.splash is not None else None
+                )
             if self.controller is not None:
                 self.controller.deleteLater()
                 self.controller = None
-            self.splash.setProperty("statusText", "Unable to prepare the interface. Please retry.")
-            self.splash.setProperty("failed", True)
+            self._show_error("Unable to prepare the interface. Please retry.")
+        finally:
+            self._building_ui = False
 
     @Slot()
     def abort(self):
         self.shutdown()
-        self.splash.hide()
+        if self.splash is not None:
+            self.splash.hide()
         self.app.quit()
 
     def shutdown(self):
         self._cancelled.set()
+        self._splash_timer.stop()
+        self._splash_hold_timer.stop()
+        if self.controller is not None:
+            self.controller.cancelConnectionPreparation()
+            self.controller.cancelWarmCachePreparation()
 
     @Slot()
     def activate(self):
@@ -989,16 +1583,19 @@ def load_configuration_qml(
     *,
     splash: QQuickWindow | None = None,
     show_splash: bool = True,
+    skip_startup_minimum: bool = False,
+    hold_startup_splash: bool = False,
 ) -> QQuickWindow:
     """Load the interface; tests/previews may bypass splash creation entirely."""
     if not show_splash and splash is not None:
         raise ValueError("Cannot skip an explicitly supplied startup splash")
     app = QGuiApplication.instance()
     configure_application_identity(app, resources)
-    if engine.imageProvider("providerlogos") is None:
-        from .svg_images import ProviderLogoImageProvider
+    from .svg_images import ensure_accent_theme, ensure_image_providers
 
-        engine.addImageProvider("providerlogos", ProviderLogoImageProvider(resources))
+    ensure_accent_theme(engine, resources, controller.appearancePreferences["accent"])
+    ensure_image_providers(engine, resources, include_avatars=not controller.connectionsDeferred)
+    controller._qml_engine = engine
     qml_root = resources.path("gui", "qml", "Main.qml").parent
     engine.addImportPath(str(qml_root))
     own_splash = show_splash and splash is None
@@ -1007,7 +1604,7 @@ def load_configuration_qml(
         splash.abortRequested.connect(lambda: QTimer.singleShot(0, QGuiApplication.instance().quit))
     if splash is not None:
         splash.setProperty("progress", 88)
-        splash.setProperty("statusText", "Building Home and preparing Connections…")
+        splash.setProperty("statusText", "Building Main Menu and loading service logos…")
     app.processEvents()
     quit_on_last_window = app.quitOnLastWindowClosed()
     # Keep startup/visibility changes from ending the app before the handoff.
@@ -1018,7 +1615,11 @@ def load_configuration_qml(
             {
                 "appController": controller,
                 "startupSplash": splash,
-                "startupMinimumElapsed": not show_splash,
+                "startupMinimumElapsed": not show_splash or skip_startup_minimum,
+                # A warm Home can become ready during engine.load(), before
+                # Python has connected the native-window reveal handler.
+                "startupSplashHold": True,
+                "adaptiveStartup": skip_startup_minimum,
             }
         )
         engine.load(QUrl.fromLocalFile(str(qml_root / "Main.qml")))
@@ -1044,6 +1645,9 @@ def load_configuration_qml(
                 # Keep the native frame transparent until Qt has painted it;
                 # otherwise Windows can briefly show a white unpainted window.
                 window.setOpacity(1)
+                active_splash = window.property("startupSplash")
+                if isinstance(active_splash, QQuickWindow):
+                    active_splash.hide()
                 window.requestActivate()
 
         def reveal_main():
@@ -1067,11 +1671,16 @@ def load_configuration_qml(
         def update_incubation_controller():
             # Async QML must keep loading while the main window is hidden, and
             # must use the main render loop after the splash has disappeared.
+            if not isValid(engine) or not isValid(window):
+                return
             active = window if window.isVisible() else splash
-            engine.setIncubationController(active.incubationController() if active else None)
+            engine.setIncubationController(
+                active.incubationController() if active is not None and isValid(active) else None
+            )
 
         window.visibleChanged.connect(update_incubation_controller)
         update_incubation_controller()
+        window.setProperty("startupSplashHold", hold_startup_splash)
         return window
     except Exception:
         app.setQuitOnLastWindowClosed(quit_on_last_window)
@@ -1105,7 +1714,10 @@ def main() -> int:
 
         engine = QQmlApplicationEngine()
         engine.warnings.connect(_report_qml_warnings)
-        splash = create_startup_splash(engine, resources)
+        preferences = load_startup_preferences(directory=profiles.get_config_dir(create=False))
+        splash = (
+            None if preferences["adaptive_splash"] else create_startup_splash(engine, resources)
+        )
         startup = StartupBootstrap(app, engine, resources, splash)
         instance.activationRequested.connect(startup.activate)
         atexit.register(startup.shutdown)

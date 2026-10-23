@@ -1,4 +1,5 @@
 import QtQuick
+import "../theme"
 
 // Render the fill, border, and shadows in one pass to preserve the rounded
 // boundary and avoid the hard inset edges of chained InnerShadow textures.
@@ -14,7 +15,7 @@ Item {
     property color middleColor: recessedFill ? "#0c2137" : "#142d4e"
     property color bottomColor: recessedFill ? "#102b48" : "#0d2238"
     property real middleStop: recessedFill ? 0.5 : 0.55
-    property color borderColor: "#345b85"
+    property color borderColor: AccentTheme.color("#345b85")
     property real borderWidth: 1
     property real depth: 3
     property real blur: 7
@@ -22,7 +23,7 @@ Item {
     property point shadowOffset: Qt.point(depth, depth)
     property point lightOffset: Qt.point(-depth * 0.7, -depth * 0.7)
     property color shadowColor: "#03101e"
-    property color lightColor: "#72345b85"
+    property color lightColor: AccentTheme.color("#72345b85")
     property bool shadows: true
     property color rimColor: "transparent"
     // Opt in for circular plug holders without changing other controls/dots.

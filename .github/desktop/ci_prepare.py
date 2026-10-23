@@ -47,13 +47,24 @@ LOCAL_NAMES = {
     "repoSearch",
     "repoSearch.cmd",
 }
+PREVIEW_FILES = {
+    "gui/preview_add_connection_animation.py",
+    "gui/qml/AddConnectionAnimationPreview.qml",
+    "gui/qml/ConnectionAnimationSimulation.qml",
+    "gui/qml/components/ConnectionAnimationInspector.qml",
+}
+AVATAR_DIRECTORY = "assets/icons/svg/third-party/profile-avatar/"
 
 
 def excluded(relative):
     path = Path(relative)
     return (
         bool(set(path.parts) & {".dormant", ".docs", ".scripts", "__pycache__"})
-        or path.as_posix().startswith("assets/icons/svg/third-party/")
+        or (
+            path.as_posix().startswith("assets/icons/svg/third-party/")
+            and not path.as_posix().startswith(AVATAR_DIRECTORY)
+        )
+        or path.as_posix() in PREVIEW_FILES
         or path.as_posix() == "UI_IMPLEMENTATION_NOTES.md"
         or (path.parent.as_posix() == "gui/qml" and path.name in LOCAL_NAMES)
     )
@@ -70,6 +81,7 @@ def verify_archives(root, wheel, sdist):
             path.suffix in {".png", ".svg", ".ico", ".ttf", ".qml", ".qsb", ".frag"}
             or path.name == "qmldir"
             or path.name.endswith("-OFL.txt")
+            or path.name == ".TERMS-OF-USE.md"
             or path.parent == package / "assets/docs/legal"
             or (path.suffix == ".py" and path.parent in (package, package / "gui"))
         ):

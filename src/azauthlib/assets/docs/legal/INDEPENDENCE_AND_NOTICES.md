@@ -2,7 +2,7 @@
 
 **Developer:** DOYDL Technologies 
 **Repository:** [doydl-technologies/azauthlib](https://github.com/doydl-technologies/azauthlib)
-**App Version:** v004.407 (Build 166)
+**App Version:** v004.407 (Build 345)
 
 ## 1. Independent Development and Non-Affiliation
 

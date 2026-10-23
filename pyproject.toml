@@ -29,7 +29,8 @@ classifiers = [
 dependencies = [
   "certifi>=2026.10.19",
   "keyring>=25,<26",
-  "msal>=1.31,<2",
+  "msal>=1.35,<2",
+  "cryptography>=42",
   "msal-extensions>=1.2,<2",
   "platformdirs>=4,<5",
   "portalocker>=2.10,<4",
@@ -71,11 +72,33 @@ where = ["src"]
 include = ["azauthlib", "azauthlib.*"]
 namespaces = false
 
+[tool.setuptools.exclude-package-data]
+azauthlib = [
+  "**/.dormant/*",
+  "**/.docs/*",
+  "**/.scripts/*",
+  "UI_IMPLEMENTATION_NOTES.md",
+  "gui/preview_add_connection_animation.py",
+  "gui/qml/AddConnectionAnimationPreview.qml",
+  "gui/qml/ConnectionAnimationSimulation.qml",
+  "gui/qml/components/ConnectionAnimationInspector.qml",
+  "gui/qml/_Search-Qml.cmd-",
+  "gui/qml/_Search-Qml.ps1-",
+  "gui/qml/Search-Qml.cmd",
+  "gui/qml/Search-Qml.ps1",
+  "gui/qml/Search-Qml.settings.json",
+  "gui/qml/.repoSearch.settings.json",
+  "gui/qml/repoSearch",
+  "gui/qml/repoSearch.cmd",
+]
+
 [tool.setuptools.package-data]
 azauthlib = [
   "assets/**/*.png",
   "assets/**/*.ico",
   "assets/**/*.svg",
+  "assets/icons/svg/third-party/profile-avatar/.TERMS-OF-USE.md",
+  "assets/logo/svg/third-party/.TERMS-OF-USE.md",
   "assets/fonts/*.ttf",
   "assets/fonts/*-OFL.txt",
   "assets/docs/legal/*.md",
@@ -86,23 +109,6 @@ azauthlib = [
   "gui/qml/shaders/*.qsb",
   "gui/qml/theme/*.qml",
   "gui/qml/theme/qmldir",
-]
-
-[tool.setuptools.exclude-package-data]
-azauthlib = [
-  "**/.dormant/*",
-  "**/.docs/*",
-  "**/.scripts/*",
-  "assets/icons/svg/third-party/*",
-  "UI_IMPLEMENTATION_NOTES.md",
-  "gui/qml/_Search-Qml.cmd-",
-  "gui/qml/_Search-Qml.ps1-",
-  "gui/qml/Search-Qml.cmd",
-  "gui/qml/Search-Qml.ps1",
-  "gui/qml/Search-Qml.settings.json",
-  "gui/qml/.repoSearch.settings.json",
-  "gui/qml/repoSearch",
-  "gui/qml/repoSearch.cmd",
 ]
 
 [tool.pytest.ini_options]

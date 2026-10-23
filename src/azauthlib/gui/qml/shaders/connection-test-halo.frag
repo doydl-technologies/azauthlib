@@ -10,16 +10,29 @@ layout(std140, binding = 0) uniform buf {
     float innerRotation;
     float outerDotRotation;
     float innerDotRotation;
+    vec4 family317fef;
+    vec4 family8ceaff;
+    vec4 family4db3ff;
+    vec4 family2177cd;
+    vec4 family4193e4;
+    vec4 family2077d4;
+    vec4 family3db7f9;
+    vec4 family5bcaff;
+    vec4 family175ea6;
+    vec4 family43c6ff;
+    vec4 family2a74bd;
+    vec4 family4fb4ff;
 };
 
 vec4 rgba(float r, float g, float b, float a) {
     return vec4(vec3(r, g, b) / 255.0 * a, a);
 }
+vec4 familyColor(vec4 shade, float alpha) { return vec4(shade.rgb * alpha, alpha); }
 vec4 over(vec4 front, vec4 back) { return front + back * (1.0 - front.a); }
 vec4 outerTrail(float angle) {
     angle = mod(angle + 360.0, 360.0);
-    vec4 blue = rgba(79, 180, 255, 1.0);
-    vec4 dimBlue = rgba(42, 116, 189, 1.0);
+    vec4 blue = familyColor(family4fb4ff,1.0);
+    vec4 dimBlue = familyColor(family2a74bd,1.0);
     if (angle < 42.0) return vec4(0.0);
     if (angle < 86.0) return blue * (angle - 42.0) / 44.0;
     if (angle < 105.0) return blue * (105.0 - angle) / 19.0;
@@ -30,8 +43,8 @@ vec4 outerTrail(float angle) {
 }
 vec4 innerTrail(float angle) {
     angle = mod(angle + 720.0, 360.0);
-    vec4 cyan = rgba(67, 198, 255, 0.95);
-    vec4 blue = rgba(23, 94, 166, 1.0);
+    vec4 cyan = familyColor(family43c6ff,0.95);
+    vec4 blue = familyColor(family175ea6,1.0);
     if (angle < 90.0) return vec4(0.0);
     if (angle < 139.0) return cyan * (angle - 90.0) / 49.0;
     if (angle < 155.0) return cyan * (155.0 - angle) / 16.0;
@@ -55,8 +68,8 @@ vec4 dot(vec2 p, float rotation, vec2 initial, float radius, vec4 face, float aa
                        sin(angle) * initial.x + cos(angle) * initial.y);
     float distance = length(p - center);
     float disc = 1.0 - smoothstep(radius - aa * 0.5, radius + aa * 0.5, distance);
-    vec4 glow = over(rgba(91, 202, 255, 0.55) * gaussian(distance, 4.5),
-                     rgba(61, 183, 249, 0.42) * gaussian(distance, 8.5));
+    vec4 glow = over(familyColor(family5bcaff,0.55) * gaussian(distance, 4.5),
+                     familyColor(family3db7f9,0.42) * gaussian(distance, 8.5));
     return over(face * disc, glow);
 }
 void main() {
@@ -64,23 +77,23 @@ void main() {
     float radius = length(q);
     float aa = max(fwidth(radius), 0.01);
     float angle = degrees(atan(q.x, -q.y)); // CSS conic origin: twelve o'clock.
-    vec4 result = rgba(32, 119, 212, 0.18) *
+    vec4 result = familyColor(family2077d4,0.18) *
                   clamp(1.0 - radius / (84.0 * 0.65), 0.0, 1.0);
     float outline = 1.0 - smoothstep(0.5 - aa * 0.5, 0.5 + aa * 0.5, abs(radius - 74.5));
-    result = over(rgba(65, 147, 228, 0.15) * outline, result);
-    result = over(rgba(33, 119, 205, 0.015) * gaussian(radius - 75.0, 12.5), result);
+    result = over(familyColor(family4193e4,0.15) * outline, result);
+    result = over(familyColor(family2177cd,0.015) * gaussian(radius - 75.0, 12.5), result);
 
     float outerAngle = angle - outerRotation;
     // Approximate the CSS drop-shadow's blurred alpha, separately from the
     // sharp masked gradient, so neither ring becomes a fuzzy raster sprite.
     float blurredAlpha = (outerTrail(outerAngle - 2.5).a +
                           2.0 * outerTrail(outerAngle).a + outerTrail(outerAngle + 2.5).a) * 0.25;
-    result = over(rgba(77, 179, 255, 0.50) * gaussian(radius - 81.75, 3.8) * blurredAlpha, result);
+    result = over(familyColor(family4db3ff,0.50) * gaussian(radius - 81.75, 3.8) * blurredAlpha, result);
     result = over(outerTrail(outerAngle) * radialMask(radius, 85.0 * sqrt(2.0),
                   vec4(0.64, 0.66, 0.68, 0.70)), result);
     result = over(innerTrail(angle - innerRotation) * radialMask(radius, 63.0 * sqrt(2.0),
                   vec4(0.61, 0.64, 0.69, 0.72)), result);
-    result = over(dot(q, outerDotRotation, vec2(0.5, -80.5), 3.5, rgba(140, 234, 255, 1.0), aa), result);
-    result = over(dot(q, innerDotRotation, vec2(-0.5, -59.5), 2.5, rgba(49, 127, 239, 1.0), aa), result);
+    result = over(dot(q, outerDotRotation, vec2(0.5, -80.5), 3.5, familyColor(family8ceaff,1.0), aa), result);
+    result = over(dot(q, innerDotRotation, vec2(-0.5, -59.5), 2.5, familyColor(family317fef,1.0), aa), result);
     fragColor = result * qt_Opacity;
 }

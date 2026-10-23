@@ -33,16 +33,20 @@ from urllib.parse import urlsplit
 import keyring
 import requests
 from msal import ConfidentialClientApplication, PublicClientApplication, TokenCache
-from PySide6.QtCore import Property, QObject, QTimer, Signal, Slot
+from PySide6.QtCore import Property, QObject, QTimer, QUrl, Signal, Slot
 from PySide6.QtGui import QGuiApplication
 
+from ..certificates import CertificateError, import_certificate
 from ..credentials import (
+    AUTH_METHODS,
     KEYRING_SERVICE,
     CredentialStoreError,
+    certificate_password,
     has_stored_secret,
     load_public_configuration,
     save_configuration,
 )
+from ..profile_avatars import profile_avatar_names
 from ..profiles import (
     ProfileStoreError,
     _validated_name,
@@ -53,7 +57,10 @@ from ..profiles import (
     rename_profile,
     resolve_profile,
     select_profile,
+    set_profile_avatar,
 )
+from .certificate_creation import CertificateCreationController
+from .certificate_import import CertificateImportController
 from .connection_results import ConnectionResults
 
 _STORE_ERRORS = (CredentialStoreError, ProfileStoreError, OSError, TypeError, ValueError)
@@ -108,7 +115,7 @@ def _result_message(result: dict, status: int) -> tuple[bool, str]:
     if not isinstance(error, str) or not re.fullmatch(r"[a-zA-Z0-9_]{1,80}", error):
         error = "authentication_failed"
     guidance = {
-        "invalid_client": "Check the client ID and secret value, including its expiry.",
+        "invalid_client": "Check the client ID, secret/certificate, its registration and expiry.",
         "unauthorized_client": "Check the app registration's authentication settings.",
         "invalid_scope": "Check the app's Microsoft Graph permissions and consent.",
         "access_denied": "Sign-in or consent was declined.",
@@ -140,7 +147,20 @@ def test_saved_connection(values: dict, cancel: Event, device_callback) -> tuple
             "instance_discovery": False,
             "enable_pii_log": False,
         }
-        if values["auth_method"] == "client_credentials":
+        if values["auth_method"] == "client_certificate":
+            spec = values.get("certificate")
+            password = values.get("_certificate_password")
+            if "_certificate_password" not in values:
+                password = certificate_password(
+                    spec,
+                    profile=values.get("_profile_id"),
+                    client_id=values["client_id"],
+                    tenant_id=values["tenant_id"],
+                )
+            imported = import_certificate(spec, password)
+            app = ConfidentialClientApplication(client_credential=imported.credential, **options)
+            result = app.acquire_token_for_client(scopes=_GRAPH_SCOPE)
+        elif values["auth_method"] == "client_credentials":
             secret = (
                 values["_client_secret"]
                 if "_client_secret" in values
@@ -173,6 +193,8 @@ def test_saved_connection(values: dict, cancel: Event, device_callback) -> tuple
         if cancel.is_set():
             raise _TestCancelled()
         return _result_message(result or {}, transport.token_status)
+    except (CertificateError, CredentialStoreError) as exc:
+        return False, str(exc)
     except _TestCancelled:
         return False, "Connection test cancelled or timed out."
     except requests.RequestException:
@@ -192,6 +214,7 @@ class ConnectionManagerController(QObject):
     profilesChanged = Signal()
     selectionChanged = Signal()
     editorChanged = Signal()
+    avatarChanged = Signal()
     statusChanged = Signal()
     testChanged = Signal()
     deviceCodeChanged = Signal()
@@ -203,17 +226,23 @@ class ConnectionManagerController(QObject):
     _testFinished = Signal(int, bool, str, object)
     _deviceReceived = Signal(int, str, str)
 
-    def __init__(self, parent: QObject, *, startup_state=None):
+    def __init__(self, parent: QObject, *, startup_state=None, deferred=False):
         super().__init__(parent)
         self._profiles = []
         active = (
             startup_state["active"]
             if startup_state
-            else (active_profile() if list_profiles() else None)
+            else (None if deferred else active_profile() if list_profiles() else None)
         )
         self._selected = active.id if active else ""
         self._editor = {}
+        self._draft_avatar = ""
         self._editing = False
+        self._certificate_import = CertificateImportController(self)
+        self._certificate_creator = CertificateCreationController(
+            self, allowed=lambda: self._editing and not self._busy
+        )
+        self._certificate_sessions = {}
         self._edit_secret_key = self._edit_secret_digest = None
         self._status = "Choose a saved connection, or add one. Testing is optional."
         self._status_kind = "information"
@@ -223,6 +252,7 @@ class ConnectionManagerController(QObject):
         self._job = 0
         self._cancel = Event()
         self._preparing_open = False
+        self._open_generation = 0
         self._results = startup_state["results"] if startup_state else ConnectionResults()
         self._prepared_startup = None
         self._openFinished.connect(self._finish_open)
@@ -236,12 +266,102 @@ class ConnectionManagerController(QObject):
                 "selected": self._selected,
                 "editor": self._editor,
             }
-        else:
+        elif not deferred:
             self.refresh()
+
+    def install_prepared_state(self, state):
+        """GUI-thread handoff; file/keyring/history reads already ran on the worker."""
+        active = state["active"]
+        self._results = state["results"]
+        self._prepared_startup = {
+            "profiles": [{"id": p.id, "name": p.name} for p in state["profiles"]],
+            "selected": active.id if active else "",
+            "editor": state["editor"],
+        }
+
+    def discard_prepared_state(self):
+        """Drop an unused background snapshot without changing edits or test state."""
+        if not self._editing and not self._busy:
+            self._prepared_startup = None
+            self._open_generation += 1
+            self._preparing_open = False
 
     @Property("QVariantList", notify=profilesChanged)
     def profiles(self):
         return self._profiles
+
+    @Property("QStringList", constant=True)
+    def avatarChoices(self):
+        return ["", *profile_avatar_names()]
+
+    @Property(str, notify=avatarChanged)
+    def avatar(self):
+        return self._draft_avatar if self._editing else self._editor.get("avatar", "")
+
+    @Slot(str, result=bool)
+    def setAvatar(self, avatar):
+        if self._busy:
+            return False
+        if avatar not in self.avatarChoices:
+            self._set_status("Choose an avatar from the available images.", "error")
+            return False
+        if self._editing:
+            if avatar != self._draft_avatar:
+                self._draft_avatar = avatar
+                self.avatarChanged.emit()
+            return True
+        if not self._selected:
+            return False
+        try:
+            profile = set_profile_avatar(self._selected, avatar)
+        except _STORE_ERRORS:
+            self._set_status("Unable to save this avatar. Please try again.", "error")
+            return False
+        self._prepared_startup = None
+        self._editor = {**self._editor, "avatar": profile.avatar}
+        self.editorChanged.emit()
+        self.avatarChanged.emit()
+        self.storeChanged.emit()
+        self._set_status(f"Avatar updated for “{profile.name}”.", "success")
+        return True
+
+    @Property(QObject, constant=True)
+    def certificateImport(self):
+        return self._certificate_import
+
+    @Property(QObject, constant=True)
+    def certificateCreator(self):
+        return self._certificate_creator
+
+    @Slot()
+    def resetCertificateDraft(self):
+        original = dict(self._editor)
+        session = self._certificate_sessions.get(original.get("id"))
+        if session and session[:3] == (
+            original.get("client"),
+            original.get("tenant"),
+            (original.get("certificate") or {}).get("fingerprint"),
+        ):
+            original["_session_password"] = session[3]
+        self._certificate_import.reset(original)
+
+    @Slot(QUrl, result=str)
+    def localCertificatePath(self, url):
+        return url.toLocalFile() if url.isLocalFile() else ""
+
+    @Slot(str, result=str)
+    def certificateCommonName(self, subject):
+        """Format public display metadata without changing stored certificate data."""
+        from cryptography import x509
+        from cryptography.x509.oid import NameOID
+
+        try:
+            names = x509.Name.from_rfc4514_string(subject).get_attributes_for_oid(
+                NameOID.COMMON_NAME
+            )
+        except ValueError:
+            return subject or "Not provided"
+        return ", ".join(f"CN={name.value}" for name in names) or "Not provided"
 
     @Property(str, notify=selectionChanged)
     def selectedId(self):
@@ -264,6 +384,8 @@ class ConnectionManagerController(QObject):
         """Compare effective saved values in memory; never return/read a secret here."""
         if not self._editing:
             return False
+        if self._draft_avatar != self._editor.get("avatar", ""):
+            return True
         if self.creatingConnection:
             return (
                 any(value.strip() for value in (name, tenant, client, secret))
@@ -307,13 +429,17 @@ class ConnectionManagerController(QObject):
             errors["tenant"] = "Tenant ID or verified domain is required."
         elif not validate_tenant_id(tenant):
             errors["tenant"] = "Use a tenant UUID, verified domain, or supported audience."
-        elif method == "client_credentials" and tenant in ("common", "organizations", "consumers"):
+        elif method in ("client_credentials", "client_certificate") and tenant in (
+            "common",
+            "organizations",
+            "consumers",
+        ):
             errors["tenant"] = "Client credentials needs a specific tenant UUID or domain."
         if not client:
             errors["client"] = "Application (client) ID is required."
         elif not validate_client_id(client):
             errors["client"] = "Use the Application (client) UUID from Entra."
-        if method not in ("interactive", "device_code", "client_credentials"):
+        if method not in AUTH_METHODS:
             errors["method"] = "Choose a supported authentication method."
         if method == "client_credentials":
             reusable = (
@@ -325,6 +451,8 @@ class ConnectionManagerController(QObject):
                 errors["secret"] = "Client secret value is required for this method."  # nosec B105 # noqa: S105 -- validation message
             elif secret and not validate_client_secret(secret):
                 errors["secret"] = "Secret must contain non-space text and no control characters."  # nosec B105 # noqa: S105 -- validation message
+        if method == "client_certificate" and not self._certificate_import.state.get("valid"):
+            errors["certificate"] = "Import and validate a certificate before saving."
         return {**errors, "valid": not errors}
 
     @Property(str, notify=statusChanged)
@@ -385,10 +513,14 @@ class ConnectionManagerController(QObject):
         self._edit_secret_key = self._edit_secret_digest = None
         if not self._selected:
             self._editor = {}
+            self._draft_avatar = ""
+            self.avatarChanged.emit()
             self.editorChanged.emit()
             return
         profile = resolve_profile(self._selected)
         self._editor = self._read_editor(profile)
+        self._draft_avatar = self._editor.get("avatar", "")
+        self.avatarChanged.emit()
         if self._editing and self._editor.get("hasSecret"):
             # One edit-session snapshot, not a keyring lookup on each keystroke.
             # Only an ephemeral, keyed digest stays in Python; never send it to QML.
@@ -413,10 +545,12 @@ class ConnectionManagerController(QObject):
         return {
             "id": profile.id,
             "name": profile.name,
+            "avatar": profile.avatar,
             "tenant": values.get("tenant_id") or "",
             "client": values.get("client_id") or "",
             "method": values["auth_method"],
             "hasSecret": stored,
+            "certificate": values.get("certificate") or {},
             "testResult": self._results.state(profile.id, values),
         }
 
@@ -426,8 +560,11 @@ class ConnectionManagerController(QObject):
         if self._preparing_open:
             return
         self._preparing_open = True
+        self._open_generation += 1
+        generation = self._open_generation
         if self._prepared_startup is not None:
             prepared, self._prepared_startup = self._prepared_startup, None
+            prepared = {**prepared, "_generation": generation}
             QTimer.singleShot(0, self, lambda: self._finish_open(prepared))
             return
         selected = self._selected
@@ -437,6 +574,7 @@ class ConnectionManagerController(QObject):
                 saved = list_profiles()
                 profile = next((p for p in saved if p.id == selected), saved[0] if saved else None)
                 result = {
+                    "_generation": generation,
                     "profiles": [{"id": p.id, "name": p.name} for p in saved],
                     "selected": profile.id if profile else "",
                     "editor": self._read_editor(profile) if profile else {},
@@ -455,6 +593,11 @@ class ConnectionManagerController(QObject):
     @Slot(object)
     def _finish_open(self, result):
         # Queued signal delivery applies all QObject state on the UI thread.
+        if (
+            result is not None
+            and result.get("_generation", self._open_generation) != self._open_generation
+        ):
+            return
         self._preparing_open = False
         if result is None:
             self.openingPrepared.emit(False)
@@ -463,6 +606,7 @@ class ConnectionManagerController(QObject):
         self._selected = result["selected"]
         self._editor = result["editor"]
         self._editing = False
+        self.avatarChanged.emit()
         self.profilesChanged.emit()
         self.selectionChanged.emit()
         self.editorChanged.emit()
@@ -490,6 +634,9 @@ class ConnectionManagerController(QObject):
         if self._busy or self._editing:
             return
         self._editing = True
+        self._draft_avatar = ""
+        self.avatarChanged.emit()
+        self._certificate_import.discard()
         self._edit_secret_key = self._edit_secret_digest = None
         self._editor = {
             "id": "",
@@ -517,6 +664,8 @@ class ConnectionManagerController(QObject):
 
     @Slot()
     def cancelEdit(self):
+        self._certificate_creator.cancel()
+        self._certificate_import.discard()
         was_editing = self._editing
         self._editing = False
         self._edit_secret_key = self._edit_secret_digest = None
@@ -528,7 +677,7 @@ class ConnectionManagerController(QObject):
     def saveConnection(self, name, tenant, client, secret, method):
         from .config_app import validate_client_id, validate_client_secret, validate_tenant_id
 
-        if not self._editing or self._busy:
+        if not self._editing or self._busy or self._certificate_creator.state["busy"]:
             return False
         tenant, client = tenant.strip(), client.strip()
         if not validate_tenant_id(tenant) or not validate_client_id(client):
@@ -536,10 +685,14 @@ class ConnectionManagerController(QObject):
                 "Enter a valid Tenant ID/domain and Application (client) UUID.", "error"
             )
             return False
-        if method not in ("interactive", "device_code", "client_credentials"):
+        if method not in AUTH_METHODS:
             self._set_status("Choose a supported authentication method.", "error")
             return False
-        if method == "client_credentials" and tenant in ("common", "organizations", "consumers"):
+        if method in ("client_credentials", "client_certificate") and tenant in (
+            "common",
+            "organizations",
+            "consumers",
+        ):
             self._set_status("Client credentials requires a specific tenant ID or domain.", "error")
             return False
         if secret and not validate_client_secret(secret):
@@ -548,6 +701,14 @@ class ConnectionManagerController(QObject):
         created = None
         original = None
         try:
+            certificate_options = {}
+            if method == "client_certificate":
+                validated = self._certificate_import.prepared(client, tenant)
+                certificate_options = {
+                    "certificate": validated["material"],
+                    "certificate_password_value": validated["password"],
+                    "remember_certificate_password": validated["remember"],
+                }
             if method == "client_credentials" and not secret and not has_stored_secret(client):
                 self._set_status(
                     "Client credentials requires a secret value (not its Secret ID).", "error"
@@ -555,30 +716,41 @@ class ConnectionManagerController(QObject):
                 return False
             if self._editor["id"]:
                 original = resolve_profile(self._editor["id"])
-                profile = rename_profile(original, name)
+                profile = rename_profile(original, name, avatar=self._draft_avatar)
                 authority = load_public_configuration(profile=profile.id).get("authority")
             else:
-                profile = created = create_profile(name, select=False)
+                profile = created = create_profile(name, select=False, avatar=self._draft_avatar)
                 authority = None
             save_configuration(
                 client_id=client,
                 tenant_id=tenant,
-                client_secret=secret or None,
+                client_secret=(secret or None) if method == "client_credentials" else None,
                 profile=profile.id,
                 auth_method=method,
                 authority=authority,
+                **certificate_options,
             )
         except _STORE_ERRORS as exc:
             with suppress(*_STORE_ERRORS):
                 if created:
                     remove_profile(created)
                 elif original:
-                    rename_profile(original, original.name)
+                    rename_profile(original, original.name, avatar=original.avatar)
             self.refresh()
             self._set_status(f"Unable to save connection: {exc}", "error")
             return False
         self._selected = profile.id
+        if method == "client_certificate":
+            self._certificate_sessions[profile.id] = (
+                client,
+                tenant,
+                validated["public"]["fingerprint"],
+                validated["password"],
+            )
+        else:
+            self._certificate_sessions.pop(profile.id, None)
         self._editing = False
+        self._certificate_import.discard()
         self._edit_secret_key = self._edit_secret_digest = None
         self.selectionChanged.emit()
         self.refresh()
@@ -609,6 +781,7 @@ class ConnectionManagerController(QObject):
             return
         try:
             profile = remove_profile(self._selected)
+            self._certificate_sessions.pop(profile.id, None)
             self._results.forget(profile.id)
             self.refresh()
             self.storeChanged.emit()
@@ -653,6 +826,7 @@ class ConnectionManagerController(QObject):
         else:
             message += " — waiting for Microsoft."
         self._set_status(message)
+        certificate_session = self._certificate_sessions.get(profile.id)
 
         def run():
             def device(code, url):
@@ -660,6 +834,18 @@ class ConnectionManagerController(QObject):
                     self._deviceReceived.emit(job, code, url)
 
             snapshot = dict(values)
+            snapshot["_profile_id"] = profile.id
+            if (
+                snapshot["auth_method"] == "client_certificate"
+                and certificate_session
+                and certificate_session[:3]
+                == (
+                    snapshot["client_id"],
+                    snapshot["tenant_id"],
+                    (snapshot.get("certificate") or {}).get("fingerprint"),
+                )
+            ):
+                snapshot["_certificate_password"] = certificate_session[3]
             if snapshot["auth_method"] == "client_credentials":
                 try:
                     snapshot["_client_secret"] = keyring.get_password(

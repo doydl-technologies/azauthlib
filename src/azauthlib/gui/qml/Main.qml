@@ -10,10 +10,14 @@ ApplicationWindow {
     required property var appController
     property bool closingAllowed: false
     property bool startupMinimumElapsed: false
+    property bool adaptiveStartup: false
+    property bool startupSplashHold: false
+    onStartupSplashHoldChanged: if (!startupSplashHold) Qt.callLater(revealConnectionsWhenReady)
     property bool startupRevealed: false
     property var startupSplash: null
     readonly property bool startupVisible: Boolean(startupSplash && startupSplash.visible)
     property string pendingStartupError: ""
+    property string serviceLoadError: ""
     property string currentPage: "providers"
     readonly property bool onProviderHome: currentPage === "providers"
     property bool navigating: false
@@ -22,14 +26,51 @@ ApplicationWindow {
     readonly property bool editingFocused: connectionsPage.editingFocused
     // Temporary animation locks block input, not the permanent chrome's appearance.
     readonly property bool persistentControlsEnabled: startupRevealed && !startupVisible &&
-        !appController.connectionManager.editing && !appController.connectionManager.testing
+        !appController.connectionManager.editing && !appController.connectionManager.testing && !serviceSelection.active
     readonly property bool navigationLocked: navigating || connectionsPage.contentTransitionBusy || editingFocused ||
-        appController.connectionManager.testing
+        appController.connectionManager.testing || settingsDialog.visible || serviceSelection.active ||
+        (appController.connectionsLoading && !appController.connectionsBackgroundPreparing)
     signal startupRevealRequested()
+    // Shared footer entry point, available from either page.
+    signal settingsRequested()
+    onSettingsRequested: {
+        if (startupRevealed && !startupVisible && !navigationLocked) {
+            actionSuccess.dismiss()
+            settingsDialog.openSettings(settingsGear)
+        }
+    }
+    // All successful Save actions share the checkmark. Only a newly saved
+    // connection uses "created", which the overlay maps to the plug animation.
+    function showActionConfirmation(action) {
+        if (["created", "saved", "activated", "removed"].includes(action))
+            actionSuccess.play(action)
+    }
 
     function openConnections() {
         if (appController.selectedProviderId !== "graph") return
-        navigateTo("connections")
+        // Direct navigation remains available to diagnostic/eager launchers.
+        if (connectionsPage.opened && !connectionsPage.publicStateOnly) navigateTo("connections")
+        else beginServiceSelection()
+    }
+    function beginServiceSelection() {
+        if (!startupRevealed || startupVisible || navigationLocked ||
+            !onProviderHome || appController.selectedProviderId !== "graph") return
+        const style = appController.appearancePreferences.service_animation || "group"
+        const subject = providerHome.selectedSpotlightSubject(style, serviceSelection)
+        serviceLoadError = ""
+        if (serviceSelection.begin(subject, style)) {
+            providerHome.closeAbout()
+            connectionsPage.openManager()
+        }
+    }
+    function finishServiceSelection() {
+        if (!connectionsPage.opened) return
+        // The spotlight completes the forward transition without another
+        // whole-card or page animation after the subject settles.
+        currentPage = "connections"
+        appController.recordServiceVisit()
+        navigationProgress = 1
+        finishNavigation()
     }
     function showProviderHome() {
         navigateTo("providers")
@@ -38,6 +79,7 @@ ApplicationWindow {
         if (!startupRevealed || startupVisible || navigationLocked || currentPage === page) return
         if (!["providers", "connections"].includes(page)) return
         currentPage = page
+        if (page === "connections" && connectionsPage.opened) appController.recordServiceVisit()
         if (ConnectionTheme.reducedMotion) {
             navigationProgress = page === "connections" ? 1 : 0
             finishNavigation()
@@ -68,7 +110,8 @@ ApplicationWindow {
     }
 
     function revealConnectionsWhenReady() {
-        if (startupMinimumElapsed && providerHome.ready && (connectionsPage.opened || connectionsPage.loadFailed) &&
+        if (startupMinimumElapsed && !startupSplashHold && providerHome.ready &&
+                (appController.connectionsDeferred || connectionsPage.opened || connectionsPage.loadFailed) &&
                 !startupRevealed) {
             startupRevealed = true
             if (startupVisible) {
@@ -76,7 +119,7 @@ ApplicationWindow {
                 startupSplash.statusText = "Ready"
             }
             // Main stays hidden throughout the splash, including its fade-out.
-            if (startupVisible) {
+            if (startupVisible && !adaptiveStartup) {
                 startupSplash.raise()
                 startupTransition.start()
             } else finishStartup()
@@ -86,7 +129,9 @@ ApplicationWindow {
         // Main takes over the shared taskbar group before the faded splash
         // hides, so there is no interval with neither window represented.
         window.startupRevealRequested()
-        if (startupSplash) startupSplash.hide()
+        // Adaptive startup keeps the splash in place until Python receives the
+        // first painted main frame, avoiding a flash of desktop between windows.
+        if (startupSplash && !adaptiveStartup) startupSplash.hide()
         providerHome.forceActiveFocus()
         if (pendingStartupError.length > 0) {
             appDialog.showDialog("Unable to load Connections", pendingStartupError, "error", false)
@@ -123,11 +168,15 @@ ApplicationWindow {
     }
 
     Component.onCompleted: {
+        AccentTheme.controller = window.appController
         Theme.darkMode = true
         // Python centers the final native frame on the splash's monitor at reveal.
         if (!startupMinimumElapsed) startupTimer.start()
     }
+    Component.onDestruction: AccentTheme.controller = null
     onClosing: event => {
+        window.appController.cancelConnectionPreparation()
+        serviceSelection.reset()
         if (!closingAllowed) {
             event.accepted = false
             connectionsPage.requestClose()
@@ -189,16 +238,17 @@ ApplicationWindow {
         objectName: "providerSelectorHome"
         parent: pageViewport
         width: window.width; height: window.height
-        transform: Translate { x: window.navigationProgress * pageViewport.width }
+        transform: Translate { x: -window.navigationProgress * pageViewport.width }
         appController: window.appController
+        selectionHidden: serviceSelection.active
         helpContentScale: connectionsPage.contentScale
         // Match the Connections corner in window coordinates before
         // Home's independent design-canvas scaling is applied.
         outerCornerRadius: (connectionsPage.closeBackdrop as ConnectionSurface).radius * connectionsPage.baseScale
         visible: window.onProviderHome || window.navigating
-        enabled: window.onProviderHome && !window.navigating && window.startupRevealed && !window.startupVisible
+        enabled: window.onProviderHome && !window.navigating && !serviceSelection.active && window.startupRevealed && !window.startupVisible
         onReadyChanged: window.revealConnectionsWhenReady()
-        onContinued: window.openConnections()
+        onContinued: window.beginServiceSelection()
     }
     Image {
         objectName: "brandLogo"
@@ -212,19 +262,6 @@ ApplicationWindow {
         fillMode: Image.PreserveAspectFit
         horizontalAlignment: Image.AlignLeft
         smooth: true; mipmap: true
-    }
-    ConnectionButton {
-        objectName: "createAppShortcutButton"
-        anchors.right: mainMenuButton.visible ? mainMenuButton.left : parent.right
-        anchors.rightMargin: mainMenuButton.visible ? 12 : 30
-        y: 15
-        text: window.appController.shortcutBusy ? "Creating shortcut…" : "Create app shortcut"
-        visible: window.appController.shortcutSupported
-        enabled: window.startupRevealed && !window.startupVisible &&
-            !window.navigationLocked && !window.appController.shortcutBusy
-        visualEnabled: window.persistentControlsEnabled && !window.appController.shortcutBusy
-        fadeDisabledState: false
-        onClicked: window.appController.createAppShortcut()
     }
     ConnectionButton {
         id: mainMenuButton
@@ -242,13 +279,13 @@ ApplicationWindow {
         background: ConnectionSurface {
             objectName: "connectionsMainMenuSurface"
             sunken: mainMenuButton.interactivePress
-            topColor: mainMenuButton.interactivePress ? "#126981" :
-                      mainMenuButton.interactiveHover ? "#1b91ae" : "#167d9a"
-            middleColor: mainMenuButton.interactivePress ? "#0e4b5d" :
-                         mainMenuButton.interactiveHover ? "#177a93" : "#146c85"
-            bottomColor: mainMenuButton.interactivePress ? "#0b3d4d" :
-                         mainMenuButton.interactiveHover ? "#14647a" : "#125369"
-            borderColor: "#56d7ef"
+            topColor: mainMenuButton.interactivePress ? AccentTheme.color("#126981") :
+                      mainMenuButton.interactiveHover ? AccentTheme.color("#1b91ae") : AccentTheme.color("#167d9a")
+            middleColor: mainMenuButton.interactivePress ? AccentTheme.color("#0e4b5d") :
+                         mainMenuButton.interactiveHover ? AccentTheme.color("#177a93") : AccentTheme.color("#146c85")
+            bottomColor: mainMenuButton.interactivePress ? AccentTheme.color("#0b3d4d") :
+                         mainMenuButton.interactiveHover ? AccentTheme.color("#14647a") : AccentTheme.color("#125369")
+            borderColor: AccentTheme.color("#56d7ef")
             borderWidth: mainMenuButton.interactiveFocus ? 2 : 1
             depth: mainMenuButton.interactiveHover ? 2 : 3
             blur: mainMenuButton.interactiveHover ? 4 : 7
@@ -256,8 +293,8 @@ ApplicationWindow {
                                   mainMenuButton.interactiveHover ? -1 : -2)
             lightBlur: mainMenuButton.interactiveHover ? 4 : 6
             shadowColor: "#03101e"
-            lightColor: "#5538bcd7"
-            rimColor: "#30edfdff"
+            lightColor: AccentTheme.color("#5538bcd7")
+            rimColor: AccentTheme.color("#30edfdff")
         }
 
         visible: !window.onProviderHome
@@ -273,6 +310,18 @@ ApplicationWindow {
         anchors.rightMargin: 25
         anchors.bottomMargin: 6
         height: 28
+        SettingsGearButton {
+            id: settingsGear
+            objectName: "appSettingsButton"
+            anchors.left: parent.left
+            anchors.leftMargin: -21
+            anchors.verticalCenter: parent.verticalCenter
+            enabled: window.startupRevealed && !window.startupVisible &&
+                !window.navigationLocked && (window.onProviderHome ?
+                    providerHome.ready : connectionsPage.interactionEnabled)
+            visualEnabled: window.persistentControlsEnabled
+            onActivationRequested: window.settingsRequested()
+        }
         Rectangle {
             id: footerBackdrop
             objectName: "footerBackdrop"
@@ -319,7 +368,7 @@ ApplicationWindow {
             }
             Text {
                 anchors.verticalCenter: parent.verticalCenter
-                text: "|"; color: "#6a8aab"; font.pixelSize: 12
+                text: "|"; color: AccentTheme.color("#6a8aab"); font.pixelSize: 12
                 Accessible.ignored: true
             }
             FooterLink {
@@ -337,7 +386,7 @@ ApplicationWindow {
             }
             Text {
                 anchors.verticalCenter: parent.verticalCenter
-                text: "|"; color: "#6a8aab"; font.pixelSize: 12
+                text: "|"; color: AccentTheme.color("#6a8aab"); font.pixelSize: 12
                 Accessible.ignored: true
             }
             FooterLink {
@@ -365,12 +414,13 @@ ApplicationWindow {
         parent: pageViewport
         anchors.left: parent.left; anchors.right: parent.right
         anchors.top: parent.top; anchors.bottom: parent.bottom
-        transform: Translate { x: (window.navigationProgress - 1) * pageViewport.width }
+        transform: Translate { x: (1 - window.navigationProgress) * pageViewport.width }
         // Leave visible backdrop around the raised workspace, not just a rim.
         anchors.leftMargin: 30; anchors.rightMargin: 30
         anchors.topMargin: 70; anchors.bottomMargin: 14
         appController: window.appController
         visible: !window.onProviderHome || window.navigating
+        externalModalOpen: settingsDialog.visible
         enabled: !window.onProviderHome && !window.navigating && window.startupRevealed && !window.startupVisible
         onHomeRequested: window.showProviderHome()
         onCloseRequested: {
@@ -378,6 +428,10 @@ ApplicationWindow {
             Qt.callLater(() => window.close())
         }
         onPreparationFailed: message => {
+            if (serviceSelection.active) {
+                window.serviceLoadError = window.appController.connectionsError || message
+                return
+            }
             window.pendingStartupError = message
             if (window.startupRevealed && !window.startupVisible) {
                 appDialog.showDialog("Unable to load Connections", message, "error", false)
@@ -391,12 +445,44 @@ ApplicationWindow {
             }
         }
     }
+    ServiceSelectionTransition {
+        id: serviceSelection
+        objectName: "serviceSelectionTransition"
+        parent: pageViewport
+        z: 100
+        x: connectionsPage.x; y: connectionsPage.y
+        width: connectionsPage.width; height: connectionsPage.height
+        cornerRadius: (connectionsPage.closeBackdrop as ConnectionSurface).radius * connectionsPage.baseScale
+        ready: connectionsPage.opened
+        actualProgress: ready ? 100 : Math.max(connectionsPage.loadProgress, window.appController.connectionLoadProgress)
+        loadingMessage: connectionsPage.loadMessage || window.appController.connectionLoadMessage || "Initializing runtime context…"
+        failureText: window.serviceLoadError
+        onFinished: window.finishServiceSelection()
+        onCancelled: {
+            connectionsPage.cancelPreparation()
+            window.serviceLoadError = ""
+            providerHome.forceActiveFocus()
+        }
+        onRetryRequested: {
+            window.serviceLoadError = ""
+            connectionsPage.openManager()
+        }
+    }
     Connections {
         target: connectionsPage
         function onOpenedChanged() {
             window.revealConnectionsWhenReady()
         }
         function onLoadFailedChanged() { window.revealConnectionsWhenReady() }
+    }
+
+    Timer {
+        objectName: "visitedServiceWarmupTimer"
+        interval: 500; repeat: false
+        running: window.visible && window.opacity === 1 && window.startupRevealed &&
+            !window.startupVisible && window.onProviderHome && !window.navigationLocked &&
+            window.appController.canWarmVisitedService
+        onTriggered: connectionsPage.prepareInBackground()
     }
 
     // StartupSplash is created independently by the Python loader, not nested
@@ -421,10 +507,18 @@ ApplicationWindow {
         objectName: "appDialog"
         onAcknowledged: window.appController.acknowledgeDialog()
     }
+    SettingsDialog {
+        id: settingsDialog
+        objectName: "appSettingsDialog"
+        appController: window.appController
+        onPreferencesSaved: window.showActionConfirmation("saved")
+    }
     ActionSuccessOverlay {
         id: actionSuccess
         objectName: "actionSuccessOverlay"
         anchors.fill: parent
+        connectionIconSize: ConnectionTheme.newConnectionSuccessIconSize
+        connectionIconOffset: ConnectionTheme.newConnectionSuccessIconOffset
     }
     Connections {
         target: window.appController.connectionManager
@@ -432,8 +526,7 @@ ApplicationWindow {
             if (window.appController.connectionManager.editing) actionSuccess.dismiss()
         }
         function onActionCompleted(action) {
-            if (["created", "saved", "activated", "removed"].includes(action))
-                actionSuccess.play()
+            window.showActionConfirmation(action)
         }
         function onStatusChanged() {
             if (window.appController.connectionManager.statusKind === "error")

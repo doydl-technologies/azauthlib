@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120" role="img" aria-label="Windows shortcut — sunken neumorphic button">
+<title>Windows shortcut — sunken state</title>
+<desc>Editable vector artwork for azauthlib dark navy UI. Transparent external background, state-specific bevels and lighting, original icon geometry preserved.</desc>
+<defs>
+  <!-- The gradients are fully editable and render without image assets. -->
+  <radialGradient id="ambient" cx="50%" cy="50%" r="50%">
+    <stop offset="0" stop-color="#000913" stop-opacity=".88"/>
+    <stop offset=".55" stop-color="#010b15" stop-opacity=".55"/>
+    <stop offset="1" stop-color="#010b15" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="coolBounce" cx="35%" cy="30%" r="72%">
+    <stop offset="0" stop-color="#4bb7ff" stop-opacity=".20"/>
+    <stop offset=".65" stop-color="#2c7ab5" stop-opacity=".06"/>
+    <stop offset="1" stop-color="#2c7ab5" stop-opacity="0"/>
+  </radialGradient>
+  <linearGradient id="raisedRim" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#a2d9ff"/>
+    <stop offset=".23" stop-color="#4686b7"/>
+    <stop offset=".62" stop-color="#1a4770"/>
+    <stop offset="1" stop-color="#071a2f"/>
+  </linearGradient>
+  <radialGradient id="raisedFace" cx="32%" cy="25%" r="83%">
+    <stop offset="0" stop-color="#295778"/>
+    <stop offset=".25" stop-color="#1c4167"/>
+    <stop offset=".60" stop-color="#122f4f"/>
+    <stop offset="1" stop-color="#081c33"/>
+  </radialGradient>
+  <linearGradient id="wellRim" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#000813"/>
+    <stop offset=".38" stop-color="#06182c"/>
+    <stop offset=".75" stop-color="#35618a"/>
+    <stop offset="1" stop-color="#548ab7"/>
+  </linearGradient>
+  <radialGradient id="wellFace" cx="35%" cy="28%" r="83%">
+    <stop offset="0" stop-color="#061525"/>
+    <stop offset=".5" stop-color="#0b2139"/>
+    <stop offset=".84" stop-color="#143858"/>
+    <stop offset="1" stop-color="#204b70"/>
+  </radialGradient>
+  <linearGradient id="upperArc" x1="0" y1="0" x2=".9" y2="1">
+    <stop offset="0" stop-color="#b8e5ff" stop-opacity=".8"/>
+    <stop offset=".55" stop-color="#81bdea" stop-opacity=".24"/>
+    <stop offset="1" stop-color="#2e7ba9" stop-opacity="0"/>
+  </linearGradient>
+  <linearGradient id="lowerArc" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#4d83b1" stop-opacity="0"/>
+    <stop offset=".5" stop-color="#3c83bb" stop-opacity=".27"/>
+    <stop offset="1" stop-color="#7dc5fb" stop-opacity=".66"/>
+  </linearGradient>
+</defs>
+<g id="neumorphic-sunken-surface"><!-- Recessed rim: dark upper-left cutout / bright lower-right lip -->
+<circle cx="60" cy="60" r="46" fill="#122e4b"/>
+<circle cx="60" cy="60" r="45" fill="url(#wellRim)"/>
+<circle cx="60" cy="60" r="41.6" fill="#051422"/>
+<circle cx="60" cy="60" r="40.5" fill="url(#wellFace)"/>
+<!-- Top-left occlusion is INSET, not an outer cast shadow. -->
+<path d="M25 79 A41 41 0 0 1 77 23" fill="none" stroke="#000813" stroke-width="4.6" stroke-opacity=".88" stroke-linecap="round"/>
+<path d="M92 79 A41 41 0 0 1 40 96" fill="none" stroke="url(#lowerArc)" stroke-width="2.7" stroke-linecap="round"/>
+<path d="M30 36 A40 40 0 0 1 58 21" fill="none" stroke="#020b17" stroke-opacity=".55" stroke-width="1.5"/>
+<circle cx="60" cy="60" r="36.5" fill="url(#coolBounce)" opacity=".22"/></g>
+<g id="original-windows-artwork" opacity=".91"><g transform="translate(60 59) scale(0.61) translate(-47.375 -53.625)">
+          <path  id="shortcut-arrow" fill="#299EF8" d="M22.2 14.2 H76.8 V68.3 L59.5 51 44.4 66.3 C38.4 72.3 35.8 80.3 42.6 91.9 C43.2 92.9 42.2 93.2 40.9 93 C27.3 90.7 18 81.3 17.8 68.3 C17.6 55.4 23.7 46.9 31.6 39.1 L39 31.6 Z" />
+
+        </g>
+</g>
+</svg>

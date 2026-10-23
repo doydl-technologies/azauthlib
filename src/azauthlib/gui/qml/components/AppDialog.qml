@@ -13,17 +13,18 @@ Popup {
     property string message: ""
     property string variant: "information"
     property bool closeAfter: false
+    property bool acknowledgementPending: false
     readonly property color statusAccent: variant === "success" ? "#57e5ae" :
-                                         variant === "information" ? "#65caff" : "#ff8a99"
+                                         variant === "information" ? AccentTheme.color("#65caff") : "#ff8a99"
     signal acknowledged
 
     parent: Overlay.overlay
     anchors.centerIn: parent
     width: 470
-    height: 228
+    height: Math.max(228, contentItem.implicitHeight + topPadding + bottomPadding)
     modal: true
     focus: true
-    padding: 0
+    padding: 24
     closePolicy: Popup.NoAutoClose
 
     enter: Transition {
@@ -31,7 +32,7 @@ Popup {
         NumberAnimation { property: "scale"; from: 0.98; to: 1; duration: 260; easing.type: Easing.OutCubic }
     }
     exit: Transition {
-        NumberAnimation { property: "opacity"; to: 0; duration: 150; easing.type: Easing.InOutCubic }
+        NumberAnimation { property: "opacity"; to: 0; duration: ConnectionTheme.popupExitDuration; easing.type: Easing.InOutCubic }
     }
 
     function showDialog(title, body, kind, shouldClose) {
@@ -40,6 +41,7 @@ Popup {
         message = body
         variant = kind
         closeAfter = shouldClose
+        acknowledgementPending = false
         open()
         // Also restart if a new result replaces an already visible dialog.
         if (wasVisible)
@@ -54,14 +56,22 @@ Popup {
     }
 
     function acceptDialog() {
+        if (!visible || acknowledgementPending) return
+        acknowledgementPending = true
         close()
-        acknowledged()
     }
 
     onOpened: okButton.forceActiveFocus()
     onAboutToShow: startStatusAnimation()
     onAboutToHide: animatedSuccessIcon.stop()
-    onClosed: animatedSuccessIcon.reset()
+    onClosed: {
+        animatedSuccessIcon.reset()
+        // A fatal message may close the application: let its fade finish first.
+        if (acknowledgementPending) {
+            acknowledgementPending = false
+            acknowledged()
+        }
+    }
     onVariantChanged: {
         if (variant !== "success")
             animatedSuccessIcon.reset()
@@ -69,13 +79,13 @@ Popup {
 
     Shortcut {
         sequence: "Return"
-        enabled: root.visible
+        enabled: root.visible && !root.acknowledgementPending
         onActivated: root.acceptDialog()
     }
 
     Shortcut {
         sequence: "Escape"
-        enabled: root.visible
+        enabled: root.visible && !root.acknowledgementPending
         onActivated: root.acceptDialog()
     }
 
@@ -83,60 +93,10 @@ Popup {
         color: Theme.darkMode ? "#99050b13" : "#668393a3"
     }
 
-    background: Rectangle {
-        radius: 16
-        gradient: Gradient {
-            GradientStop { position: 0; color: Theme.darkMode ? "#183b5c" : "#ffffff" }
-            GradientStop { position: 0.46; color: Theme.darkMode ? "#112d49" : "#f4f9ff" }
-            GradientStop { position: 1; color: Theme.darkMode ? "#091b2e" : "#e9f3ff" }
-        }
-        border.width: 1
-        border.color: Theme.darkMode ? "#4387b6" : Theme.borderStrong
-        layer.enabled: true
-        layer.effect: MultiEffect {
-            shadowEnabled: true
-            shadowColor: Theme.shadow
-            shadowOpacity: 0.72
-            shadowBlur: 0.60
-            shadowVerticalOffset: 8
-        }
-
-        Rectangle {
-            anchors.fill: parent
-            anchors.margins: 2
-            radius: 14
-            color: "transparent"
-            border.width: 1
-            border.color: Theme.darkMode ? "#244d6c" : "#ffffff"
-        }
-
-        // Subtle blue edge light and footer divider tie into the main cards.
-        Rectangle {
-            anchors.top: parent.top
-            anchors.topMargin: 1
-            anchors.horizontalCenter: parent.horizontalCenter
-            width: parent.width - 40
-            height: 1
-            color: Theme.darkMode ? "#79caff" : "#b5d9fa"
-            opacity: 0.65
-        }
-
-        Rectangle {
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.leftMargin: 24
-            anchors.rightMargin: 24
-            y: parent.height - 82
-            height: 1
-            color: Theme.darkMode ? "#376285" : "#c4dcef"
-            opacity: 0.65
-        }
-    }
+    background: DialogSurface { objectName: "appDialogSurface" }
 
     contentItem: ColumnLayout {
-        anchors.fill: parent
-        anchors.margins: 24
-        spacing: 18
+        spacing: 16
 
         RowLayout {
             Layout.fillWidth: true
@@ -144,6 +104,7 @@ Popup {
             spacing: 16
 
             Item {
+                objectName: "appDialogIconRegion"
                 Layout.alignment: Qt.AlignTop
                 Layout.preferredWidth: 44
                 Layout.preferredHeight: 44
@@ -167,7 +128,7 @@ Popup {
                     gradient: Gradient {
                         GradientStop {
                             position: 0
-                            color: Theme.darkMode ? "#314b68" : "#f9edef"
+                            color: Theme.darkMode ? AccentTheme.color("#314b68") : "#f9edef"
                         }
                         GradientStop {
                             position: 1
@@ -198,9 +159,11 @@ Popup {
 
             ColumnLayout {
                 Layout.fillWidth: true
+                Layout.alignment: Qt.AlignTop
                 spacing: 8
 
                 Text {
+                    objectName: "appDialogTitle"
                     Layout.fillWidth: true
                     text: root.dialogTitle
                     color: Theme.textPrimary
@@ -208,9 +171,11 @@ Popup {
                     font.pixelSize: 18
                     font.weight: Font.DemiBold
                     wrapMode: Text.Wrap
+                    textFormat: Text.PlainText
                 }
 
                 Text {
+                    objectName: "appDialogMessage"
                     Layout.fillWidth: true
                     text: root.message
                     color: Theme.darkMode ? "#c1ddf3" : Theme.textSecondary
@@ -218,10 +183,14 @@ Popup {
                     font.pixelSize: 13
                     lineHeight: 1.25
                     wrapMode: Text.Wrap
+                    textFormat: Text.PlainText
                 }
-
-                Item { Layout.fillHeight: true }
             }
+        }
+
+        DialogDivider {
+            objectName: "appDialogDivider"
+            Layout.fillWidth: true
         }
 
         PrimaryButton {

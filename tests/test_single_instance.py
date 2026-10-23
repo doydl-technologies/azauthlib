@@ -136,6 +136,65 @@ def qt_app():
     return app
 
 
+def test_visibility_callback_ignores_destroyed_engine(qt_app, monkeypatch):
+    from shiboken6 import delete, isValid
+
+    resources = config_app.PackageResources()
+    controller = config_app.ConfigurationController(resources, defer_connections=True)
+    engine = QQmlApplicationEngine()
+    window = config_app.load_configuration_qml(engine, resources, controller, show_splash=False)
+    checked = []
+    actual_is_valid = isValid
+
+    def check_validity(value):
+        checked.append(value)
+        return False if value is engine else actual_is_valid(value)
+
+    monkeypatch.setattr(config_app, "isValid", check_validity)
+    window.visibleChanged.emit(False)
+    assert engine in checked
+    delete(engine)
+    assert not actual_is_valid(engine)
+    controller.deleteLater()
+    qt_app.processEvents()
+    resources.close()
+
+
+def test_ready_home_waits_for_native_reveal_handler(qt_app):
+    class ReadyDuringLoadEngine(QQmlApplicationEngine):
+        def load(self, url):
+            super().load(url)
+            self.loading_window = self.rootObjects()[0]
+            home = self.loading_window.findChild(QObject, "providerSelectorHome")
+            for _ in range(400):
+                if home.property("ready"):
+                    break
+                QTest.qWait(10)
+            assert home.property("ready")
+            # Deliver any ready/reveal callbacks before engine.load() returns.
+            QTest.qWait(20)
+
+    resources = config_app.PackageResources()
+    controller = config_app.ConfigurationController(resources, defer_connections=True)
+    engine = ReadyDuringLoadEngine()
+    window = config_app.load_configuration_qml(engine, resources, controller, show_splash=False)
+    try:
+        for _ in range(400):
+            if window.isVisible() and window.property("startupRevealed"):
+                break
+            QTest.qWait(10)
+        assert window.isVisible() and window.property("startupRevealed")
+        assert not window.property("startupSplashHold")
+        assert controller.connectionsDeferred and not controller.connectionsReady
+    finally:
+        window.setProperty("closingAllowed", True)
+        window.close()
+        engine.deleteLater()
+        controller.deleteLater()
+        qt_app.processEvents()
+        resources.close()
+
+
 def peer(lockfile, *args):
     env = dict(os.environ, PYTHONPATH=str(Path(__file__).resolve().parents[1] / "src"))
     return subprocess.Popen(
@@ -288,7 +347,7 @@ def test_relaunch_restores_real_minimized_window_and_preserves_unsaved_form(
 
     monkeypatch.setattr(config_app, "create_startup_splash", forbidden)
     resources = config_app.PackageResources()
-    controller = config_app.ConfigurationController(resources)
+    controller = config_app.ConfigurationController(resources, defer_connections=False)
     engine = QQmlApplicationEngine()
     warnings = []
     engine.warnings.connect(lambda items: warnings.extend(v.toString() for v in items))

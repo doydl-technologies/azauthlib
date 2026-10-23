@@ -1,7 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls
-import QtQuick.Effects
 import QtQuick.Layouts
 import "../theme"
 
@@ -17,23 +16,35 @@ Item {
     readonly property bool selectedIsActive: manager.selectedId.length > 0 &&
         manager.selectedId === appController.currentProfileId
     readonly property bool canAct: !manager.editing && !manager.testing && manager.profiles.length > 0
+    readonly property var authenticationMethods: ["interactive", "device_code", "client_credentials", "client_certificate"]
     readonly property var draftValidation: {
         // Track controller metadata too (duplicate names and stored-secret reuse).
         const editor = manager.editor
         const profiles = manager.profiles
+        const certificateStatus = manager.certificateImport.state
         return manager.validateConnectionDraft(nameField.text, tenantField.text, clientField.text,
             methodBox.currentIndex === 2 ? secretField.text : "",
-            ["interactive", "device_code", "client_credentials"][methodBox.currentIndex] || "")
+            authenticationMethods[methodBox.currentIndex] || "")
     }
     readonly property bool draftChanged: {
         const editor = manager.editor
         const editing = manager.editing
-        return manager.connectionDraftChanged(nameField.text, tenantField.text, clientField.text,
+        const avatar = manager.avatar
+        return (methodBox.currentIndex === 3 && certificateEditor.changed) || manager.connectionDraftChanged(nameField.text, tenantField.text, clientField.text,
             methodBox.currentIndex === 2 ? secretField.text : "",
-            ["interactive", "device_code", "client_credentials"][methodBox.currentIndex] || "")
+            authenticationMethods[methodBox.currentIndex] || "")
     }
     onDraftChangedChanged: if (manager.editing && !addingConnection) popup.editorDirty = draftChanged
     function markDraftEdited() { popup.editorDirty = addingConnection || draftChanged }
+    component ActionTile: ConnectionButton {
+        tileLayout: true
+        iconSize: 18; iconVisualSize: 18
+        iconOffsetX: 0; iconOffsetY: 0
+        iconTextSpacing: 2
+        padding: 2
+        fadeDisabledState: false
+        transitionBusy: root.contentTransitionBusy
+    }
     property real testingLayout: manager.testing ? 1 : 0
     Behavior on testingLayout { NumberAnimation { duration: ConnectionTheme.reducedMotion ? 0 : 180; easing.type: Easing.OutCubic } }
     readonly property bool editorDirty: popup.editorDirty
@@ -43,8 +54,8 @@ Item {
     property string displayedHelpTopic: "auth"
     property var lastHelpTrigger: null
     readonly property bool helpOpen: helpTopic.length > 0
-    readonly property bool zoomBlocked: discardDialog.visible || removeDialog.visible || useDialog.visible ||
-        methodBox.popup.visible || nameField.menuVisible || tenantField.menuVisible || clientField.menuVisible || secretField.menuVisible
+    readonly property bool zoomBlocked: avatarPicker.visible || discardDialog.visible || removeDialog.visible || useDialog.visible ||
+        methodBox.popup.visible || nameField.menuVisible || tenantField.menuVisible || clientField.menuVisible || secretField.menuVisible || certificateEditor.modalOpen
     // A closing overlay can restore its old focus after the test starts.
     onZoomBlockedChanged: if (manager.testing && !zoomBlocked) Qt.callLater(focusCancelTest)
     onHelpOpenChanged: if (helpOpen && root.popup.homePage)
@@ -57,9 +68,19 @@ Item {
     property real helpProgress: helpOpen ? 1 : 0
     Behavior on helpProgress { NumberAnimation { duration: ConnectionTheme.reducedMotion ? 0 : 520; easing.type: Easing.OutCubic } }
     ConnectionHelpTopics { id: helpTopics }
+    Connections {
+        target: AccentTheme
+        function onShowInfoButtonsChanged() {
+            if (!AccentTheme.showInfoButtons && !["terms", "privacy", "about"].includes(root.helpTopic))
+                root.closeHelp()
+        }
+    }
+    readonly property var certificateHelpTopics: ["certificateFormat", "certificateFile",
+        "privateKeyFile", "publicCertificate", "certificatePassword", "certificateDetails"]
+    readonly property var fieldHelpTopics: ["name", "auth", "tenant", "client", "secret"].concat(certificateHelpTopics)
     function toggleHelp(topic, trigger) {
         if (manager.testing || contentTransitionBusy) return
-        if (manager.editing && !["name", "auth", "tenant", "client", "secret"].includes(topic)) return
+        if (manager.editing && !fieldHelpTopics.includes(topic)) return
         if (!helpTopics.topics[topic]) return
         lastHelpTrigger = trigger
         if (helpTopic === topic) { closeHelp(); return }
@@ -79,10 +100,12 @@ Item {
         // Popups live in the window overlay, outside the disabled details subtree.
         // Dismiss them too so no previous menu or help action remains reachable.
         closeHelp()
+        certificateEditor.dismissInteractions()
         methodBox.popup.close()
         for (const field of [nameField, tenantField, clientField, secretField])
             field.dismissInteractions()
         pendingAction = null
+        avatarPicker.close()
         discardDialog.close(); removeDialog.close(); useDialog.close()
         Qt.callLater(focusCancelTest)
     }
@@ -98,13 +121,15 @@ Item {
         clientField.text = value.client || ""
         secretField.text = ""
         secretField.passwordVisible = false
-        methodBox.currentIndex = Math.max(0, ["interactive", "device_code", "client_credentials"].indexOf(value.method))
+        methodBox.currentIndex = Math.max(0, authenticationMethods.indexOf(value.method))
+        manager.resetCertificateDraft()
+        certificateEditor.synchronize(value.certificate || ({}))
         nameField.validationTouched = false
         tenantField.validationTouched = false
         clientField.validationTouched = false
         secretField.validationTouched = false
         popup.editorDirty = false
-        if (manager.editing && helpOpen && !["name", "auth", "tenant", "client", "secret"].includes(helpTopic))
+        if (manager.editing && helpOpen && !fieldHelpTopics.includes(helpTopic))
             closeHelp()
     }
     function changeContent(action, focusEditor, reverse, instantFields) {
@@ -113,19 +138,26 @@ Item {
         contentSwap.run(action, focusEditor === true ? () => nameField.focusInput() :
             focusEditor === false ? () => {
                 if (manager.editing) nameField.focusInput()
-                else if (root.empty) emptyAddButton.forceActiveFocus()
+                else if (root.empty) addButton.forceActiveFocus()
                 else editButton.forceActiveFocus()
             } : null, reverse, instantFields)
     }
     function beginConnection() {
         if (manager.editing || manager.testing || contentTransitionBusy) return
         changeContent(() => {
-            if (helpOpen && !["name", "auth", "tenant", "client", "secret"].includes(helpTopic)) closeHelp()
+            if (helpOpen && !fieldHelpTopics.includes(helpTopic)) closeHelp()
             manager.beginAdd()
         }, true)
     }
-    function requestClose() { guardDraft(() => root.popup.close()) }
+    function requestClose() {
+        if (manager.certificateCreator.state.busy) {
+            manager.certificateCreator.cancel()
+            return // Let the worker acknowledge cancellation before exiting normally.
+        }
+        guardDraft(() => root.popup.close())
+    }
     function cleanup() {
+        avatarPicker.close()
         contentSwap.cancel()
         manager.cancelTest()
         manager.cancelEdit()
@@ -153,7 +185,7 @@ Item {
         // while an existing field animates only a genuinely different value.
         readonly property var frames: [emptyChange, titleChange, namePresence, methodPresence,
             tenantPresence, clientPresence, secretPresence, nameText, methodText, tenantText,
-            clientText, secretText, badgeChange, editChange, removeChange, useChange,
+            clientText, secretText, badgeChange, addChange, editChange, removeChange, useChange,
             useLabelChange, cancelChange, saveChange]
         function run(callback, finished, reverse, keepFields) {
             if (busy) return
@@ -225,15 +257,17 @@ Item {
             instant: contentSwap.instantFields; suppressed: secretPresence.changed
         }
         Change { id: badgeChange; sourceItem: testButton.resultBadgeItem; value: root.manager.testResult }
-        Change { id: editChange; sourceItem: editButton; compareValue: false }
-        Change { id: removeChange; sourceItem: removeButton; compareValue: false }
-        Change { id: useChange; sourceItem: useButton; compareValue: false }
+        Change { id: addChange; sourceItem: addButton; overlayParent: sidebarActionsViewport; compareValue: false }
+        Change { id: editChange; sourceItem: editButton; overlayParent: sidebarActionsViewport; compareValue: false }
+        Change { id: removeChange; sourceItem: removeButton; overlayParent: sidebarActionsViewport; compareValue: false }
+        Change { id: useChange; sourceItem: useButton; overlayParent: sidebarActionsViewport; compareValue: false }
         Change {
             id: useLabelChange; sourceItem: useButton.labelTransitionItem; value: useButton.text
+            overlayParent: sidebarActionsViewport
             suppressed: useChange.changed
         }
-        Change { id: cancelChange; sourceItem: cancelButton; compareValue: false }
-        Change { id: saveChange; sourceItem: saveButton; compareValue: false }
+        Change { id: cancelChange; sourceItem: cancelButton; overlayParent: sidebarActionsViewport; compareValue: false }
+        Change { id: saveChange; sourceItem: saveButton; overlayParent: sidebarActionsViewport; compareValue: false }
         NumberAnimation {
             id: revealAnimation
             objectName: "managerContentRevealAnimation"
@@ -256,20 +290,21 @@ Item {
         sequence: "Escape"
         enabled: root.enabled && !root.manager.testing && !root.contentTransitionBusy && !root.popup.homePage && root.popup.visible && !discardDialog.visible && !removeDialog.visible && !useDialog.visible &&
                  !methodBox.popup.visible && !tenantField.helpVisible && !clientField.helpVisible && !secretField.helpVisible &&
-                 !root.helpOpen && !nameField.menuVisible && !tenantField.menuVisible && !clientField.menuVisible && !secretField.menuVisible
+                 !root.helpOpen && !nameField.menuVisible && !tenantField.menuVisible && !clientField.menuVisible && !secretField.menuVisible && !certificateEditor.modalOpen
         onActivated: root.requestClose()
     }
     Shortcut {
         sequence: "Escape"
         enabled: root.enabled && !root.manager.testing && !root.contentTransitionBusy && root.helpOpen && !discardDialog.visible && !removeDialog.visible && !useDialog.visible &&
-                 !methodBox.popup.visible && !nameField.menuVisible && !tenantField.menuVisible && !clientField.menuVisible && !secretField.menuVisible
+                 !methodBox.popup.visible && !nameField.menuVisible && !tenantField.menuVisible && !clientField.menuVisible && !secretField.menuVisible && !certificateEditor.modalOpen
         onActivated: root.closeHelp()
     }
-    layer.enabled: discardDialog.visible || removeDialog.visible || useDialog.visible
-    layer.effect: MultiEffect { blurEnabled: true; blurMax: 16; blur: 0.3 }
+    // Keep the live page sharp while dialogs open/close. Modal dimming remains
+    // on the overlay; do not flatten the page into a blurred offscreen layer.
     Connections {
         target: root.manager
         function onEditorChanged() { root.synchronizeEditor() }
+        function onAvatarChanged() { if (root.manager.editing) root.markDraftEdited() }
         function onDeviceCodeChanged() { copiedCodeTimer.stop(); root.deviceCodeCopied = false }
         function onTestChanged() { if (root.manager.testing) root.lockTestingInteractions() }
     }
@@ -313,9 +348,13 @@ Item {
             Layout.preferredWidth: 43 - 8 * root.helpProgress; Layout.preferredHeight: 43 - 8 * root.helpProgress
             radius: 14; depth: 5; blur: 11; borderColor: "transparent"
             angle: 145; middleStop: 0.5
-            lightOffset: Qt.point(-3, -3); lightBlur: 9; lightColor: "#66345b85"
-            topColor: "#193959"; middleColor: "#112a43"; bottomColor: "#091a2d"; rimColor: "#3a5684b8"
-            ConnectionIcon { anchors.centerIn: parent; width: 22; height: 22; name: "plug" }
+            lightOffset: Qt.point(-3, -3); lightBlur: 9; lightColor: AccentTheme.color("#66345b85")
+            topColor: "#193959"; middleColor: "#112a43"; bottomColor: "#091a2d"; rimColor: AccentTheme.color("#3a5684b8")
+            ProfileAvatar {
+                objectName: "managerHeaderAvatar"
+                anchors.centerIn: parent; width: 22; height: 22
+                avatarId: root.manager.avatar
+            }
         }
     }
         Loader {
@@ -338,17 +377,18 @@ Item {
         anchors.topMargin: 93 - 10 * root.helpProgress; anchors.bottomMargin: 16
         spacing: 22 - 10 * root.helpProgress
         ColumnLayout {
+            id: sidebarColumn
             objectName: "managerSidebar"
             Layout.preferredWidth: root.sidebarWidth
             Layout.maximumWidth: root.sidebarWidth; Layout.alignment: Qt.AlignTop
-            spacing: 14 - 4 * root.helpProgress
+            spacing: 8
             ConnectionSurface {
                 id: spotlightPanel
                 objectName: "managerSpotlight"
                 Layout.fillWidth: true; Layout.preferredHeight: 204 - 34 * root.helpProgress + 36 * root.testingLayout
                 Layout.minimumHeight: Layout.preferredHeight
                 radius: 19; sunken: true; depth: 7; blur: 16
-                shadowColor: "#aa03101e"; lightColor: "#45345b85"
+                shadowColor: "#aa03101e"; lightColor: AccentTheme.color("#45345b85")
                 lightOffset: Qt.point(-6, -6); lightBlur: 13
                 crispOutline: true
                 Item {
@@ -356,12 +396,49 @@ Item {
                     objectName: "managerSpotlightContent"
                     anchors.fill: parent
                 ConnectionTestHalo {
+                    id: spotlightHalo
                     objectName: "managerTestHalo"
                     anchors.horizontalCenter: parent.horizontalCenter; y: 20 - 6 * root.helpProgress
                     width: idleFaceSize + 36 * root.testingLayout; height: width
                     idleFaceSize: 82 - 27 * root.helpProgress
                     idleIconSize: 31 - 7 * root.helpProgress
                     testing: root.manager.testing
+                    avatarId: root.manager.avatar
+                }
+                AbstractButton {
+                    id: changeAvatarButton
+                    objectName: "managerChangeAvatar"
+                    anchors.fill: spotlightHalo
+                    visible: !root.manager.testing
+                    enabled: !root.manager.testing && !root.contentTransitionBusy &&
+                        (root.manager.editing || root.manager.profiles.length > 0)
+                    focusPolicy: enabled ? Qt.StrongFocus : Qt.NoFocus
+                    hoverEnabled: enabled
+                    Accessible.name: "Choose connection avatar"
+                    ToolTip.visible: hovered
+                    ToolTip.text: "Choose avatar"
+                    ToolTip.delay: 500
+                    onClicked: avatarPicker.open()
+                    Keys.onReturnPressed: if (enabled) clicked()
+                    HoverHandler { enabled: changeAvatarButton.enabled; cursorShape: Qt.PointingHandCursor }
+                    background: Rectangle {
+                        radius: width / 2
+                        color: "transparent"
+                        border.width: changeAvatarButton.visualFocus ? 2 : 0
+                        border.color: ConnectionTheme.accent
+                    }
+                    contentItem: Item {
+                        Rectangle {
+                            objectName: "managerAvatarEditBadge"
+                            // Profile transitions briefly lock input, not this fixed control's appearance.
+                            visible: !root.manager.testing && (root.manager.editing || root.manager.profiles.length > 0)
+                            anchors.right: parent.right; anchors.bottom: parent.bottom
+                            width: 22; height: 22; radius: 11
+                            color: changeAvatarButton.hovered ? AccentTheme.color("#235579") : "#14314d"
+                            border.color: AccentTheme.color("#5684b8")
+                            ConnectionIcon { anchors.centerIn: parent; width: 12; height: 12; name: "edit" }
+                        }
+                    }
                 }
                 Text {
                     id: spotlightName
@@ -388,12 +465,13 @@ Item {
                         id: methodChip
                         anchors.centerIn: parent; spacing: 6
                         ConnectionIcon { width: 14; height: 14; name: "lock" }
-                        Text { text: methodBox.currentText; color: ConnectionTheme.muted; font.family: ConnectionTheme.body; font.pixelSize: 10 }
+                        Text { text: methodBox.currentIndex === 3 ? "Certificate" : methodBox.currentText; color: ConnectionTheme.muted; font.family: ConnectionTheme.body; font.pixelSize: 10 }
                     }
                 }
                 }
             }
             Row {
+                id: profilesHeading
                 objectName: "managerProfilesHeading"
                 spacing: 6
                 Text {
@@ -411,13 +489,142 @@ Item {
                 }
             }
             Item {
+                id: sidebarActionsViewport
+                objectName: "managerSidebarActions"
+                Layout.fillWidth: true
+                Layout.preferredHeight: 98
+                Layout.minimumHeight: Layout.preferredHeight
+                // Fixed slots keep the saved profiles still when actions change.
+                GridLayout {
+                    id: actionGrid
+                    objectName: "managerActionGrid"
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    width: Math.min(232, parent.width)
+                    columns: 2; columnSpacing: 8; rowSpacing: 6
+                    Item {
+                        Layout.fillWidth: true; Layout.preferredHeight: 46
+                        ActionTile {
+                            id: addButton
+                            objectName: "managerAddButton"
+                            anchors.fill: parent
+                            text: "Add connection"; symbol: "add"
+                            iconSource: Qt.resolvedUrl("../../../assets/icons/svg/actions/Monocolor-Filled-Sky-Blue-circle-plus.svg")
+                            visible: !root.manager.editing
+                            enabled: root.unrelatedControlsEnabled
+                            visualEnabled: !root.manager.testing && !root.manager.editing
+                            transitionOpacity: addChange.incomingOpacity
+                            transitionOffset: addChange.incomingOffset
+                            onClicked: root.beginConnection()
+                        }
+                        ActionTile {
+                            id: cancelButton
+                            objectName: "managerCancelButton"
+                            parent: sidebarActionsViewport
+                            width: (actionGrid.width - actionGrid.columnSpacing) / 2
+                            height: 46
+                            x: saveButton.visible ? actionGrid.x : (parent.width - width) / 2
+                            y: 0
+                            Behavior on x {
+                                NumberAnimation { duration: ConnectionTheme.reducedMotion ? 0 : 180; easing.type: Easing.InOutCubic }
+                            }
+                            text: "Cancel"; symbol: "x"; variant: "cancel"
+                            visible: root.manager.editing
+                            enabled: root.manager.editing && !root.manager.testing && !root.contentTransitionBusy
+                            visualEnabled: !root.manager.testing
+                            transitionOpacity: cancelChange.incomingOpacity
+                            transitionOffset: cancelChange.incomingOffset
+                            onClicked: {
+                                if (root.addingConnection)
+                                    root.changeContent(() => root.manager.cancelEdit(), false, true)
+                                else root.guardDraft(() => root.changeContent(() => root.manager.cancelEdit(), false, true))
+                            }
+                        }
+                    }
+                    Item {
+                        Layout.fillWidth: true; Layout.preferredHeight: 46
+                        ActionTile {
+                            id: editButton
+                            objectName: "managerEditButton"
+                            anchors.fill: parent
+                            text: "Edit"; symbol: "edit"
+                            iconSource: Qt.resolvedUrl("../../../assets/icons/svg/actions/edit-utensil.svg")
+                            visible: !root.manager.editing
+                            enabled: root.canAct && !root.contentTransitionBusy
+                            visualEnabled: root.canAct
+                            transitionOpacity: editChange.incomingOpacity
+                            transitionOffset: editChange.incomingOffset
+                            onClicked: root.changeContent(() => root.manager.beginEdit(), true, false, true)
+                        }
+                        ActionTile {
+                            id: saveButton
+                            objectName: "managerSaveButton"
+                            anchors.fill: parent
+                            visible: root.manager.editing && (root.addingConnection ||
+                                (root.draftChanged && root.draftValidation.valid))
+                            text: root.addingConnection ? "Save connection" : "Save changes"
+                            symbol: "save"; variant: "primary"
+                            iconSource: Qt.resolvedUrl("../../../assets/icons/svg/actions/save.svg")
+                            visualEnabled: root.manager.editing && !root.manager.testing && root.draftValidation.valid
+                            enabled: visible && root.manager.editing && !root.manager.testing &&
+                                root.draftValidation.valid && !root.contentTransitionBusy &&
+                                !root.manager.certificateCreator.state.busy
+                            transitionOpacity: saveChange.incomingOpacity
+                            transitionOffset: saveChange.incomingOffset
+                            onClicked: if (enabled) root.changeContent(() => root.manager.saveConnection(
+                                nameField.text, tenantField.text, clientField.text,
+                                methodBox.currentIndex === 2 ? secretField.text : "",
+                                root.authenticationMethods[methodBox.currentIndex]), false, true)
+                        }
+                    }
+                    Item {
+                        Layout.fillWidth: true; Layout.preferredHeight: 46
+                        ActionTile {
+                            id: removeButton
+                            objectName: "managerRemoveButton"
+                            anchors.fill: parent
+                            text: "Remove"; symbol: "trash"; variant: "danger"
+                            iconSource: Qt.resolvedUrl("../../../assets/icons/svg/actions/Monocolor-Outlined-Pink-Red-trash.svg")
+                            visible: !root.manager.editing
+                            enabled: root.canAct && !root.contentTransitionBusy
+                            visualEnabled: root.canAct
+                            transitionOpacity: removeChange.incomingOpacity
+                            transitionOffset: removeChange.incomingOffset
+                            onClicked: removeDialog.open()
+                        }
+                    }
+                    Item {
+                        Layout.fillWidth: true; Layout.preferredHeight: 46
+                        ActionTile {
+                            id: useButton
+                            objectName: "managerUseButton"
+                            anchors.fill: parent
+                            text: root.selectedIsActive ? "Active" : "Set Active"
+                            symbol: "checkActive"; variant: root.selectedIsActive ? "good" : "normal"
+                            textColor: root.selectedIsActive ? "#8ef2c8" : "#cccccc"
+                            outlineColor: root.selectedIsActive ? AccentTheme.color("#378d7b") : "#cccccc"
+                            iconSource: Qt.resolvedUrl("../../../assets/icons/svg/actions/" + (root.selectedIsActive ?
+                                "Multicolor-Filled-Mint-Green-Transparent-circle-check.svg" :
+                                "Monocolor-Rounded-Filled-Light-Gray-Radio-Button-Checked.svg"))
+                            visible: !root.manager.editing
+                            enabled: root.canAct && !root.selectedIsActive && !root.contentTransitionBusy
+                            visualEnabled: root.canAct && !root.selectedIsActive
+                            transitionOpacity: useChange.incomingOpacity
+                            transitionOffset: useChange.incomingOffset
+                            labelTransitionOpacity: useLabelChange.incomingOpacity
+                            labelTransitionOffset: useLabelChange.incomingOffset
+                            onClicked: useDialog.open()
+                        }
+                    }
+                }
+            }
+            Item {
                 objectName: "managerProfilesViewport"
                 // Vertical shadow padding must fit inside the adjacent gaps;
                 // scrolling rows are clipped before reaching the heading/actions.
-                readonly property real shadowPaddingY: (14 - 4 * root.helpProgress) / 2
+                readonly property real shadowPaddingY: sidebarColumn.spacing / 2
                 readonly property real availableHeight: Math.max(39,
-                    mainContent.height - spotlightPanel.height - addButton.implicitHeight - 21 -
-                    (14 - 4 * root.helpProgress) * 3)
+                    mainContent.height - spotlightPanel.height - profilesHeading.height -
+                    sidebarActionsViewport.height - sidebarColumn.spacing * 3)
                 Layout.fillWidth: true
                 // Reserve space for the growing halo and device-code footer;
                 // show complete rows rather than clipped button fragments.
@@ -443,6 +650,8 @@ Item {
                     enabled: !root.manager.editing && !root.manager.testing && !root.contentTransitionBusy
                     boundsBehavior: Flickable.StopAtBounds
                     ScrollBar.vertical: ScrollBar {
+                        objectName: "managerProfilesVerticalBar"
+                        width: ConnectionTheme.scrollBarWidth
                         policy: profileList.contentHeight > profileList.height - profileList.topMargin - profileList.bottomMargin ?
                             ScrollBar.AsNeeded : ScrollBar.AlwaysOff
                     }
@@ -464,10 +673,10 @@ Item {
                             radius: 11; sunken: profilePick.selected; recessedFill: profilePick.selected
                             depth: 4; blur: 8
                             lightOffset: Qt.point(-3, -3); lightBlur: profilePick.selected ? 8 : 7
-                            lightColor: profilePick.selected ? "#77345b85" : "#55345b85"
-                            borderColor: profilePick.enabled && profilePick.visualFocus ? "#38a8ff" : profilePick.selected ? "#5684b8" : "#345b85"
+                            lightColor: profilePick.selected ? AccentTheme.color("#77345b85") : AccentTheme.color("#55345b85")
+                            borderColor: profilePick.enabled && profilePick.visualFocus ? AccentTheme.focus : profilePick.selected ? (AccentTheme.customAccent ? AccentTheme.accent : AccentTheme.color("#5684b8")) : AccentTheme.color("#345b85")
                             borderWidth: profilePick.enabled && profilePick.visualFocus ? 2 : 1
-                            rimColor: profilePick.enabled && profilePick.hovered ? "#335684b8" : "transparent"
+                            rimColor: profilePick.enabled && profilePick.hovered ? AccentTheme.color("#335684b8") : "transparent"
                         }
                         contentItem: Item {
                             Text {
@@ -488,34 +697,11 @@ Item {
                     }
                 }
             }
-            ConnectionButton {
-                id: addButton
-                objectName: "managerAddButton"
-                Layout.fillWidth: true
-                text: "Add a connection"
-                symbol: "add"
-                font.pixelSize: 11
-                // Sidebar Add button: adjust this artwork independently.
-                iconSource: Qt.resolvedUrl("../../../assets/icons/svg/plugs/connections/x-disconnected-wall-socket-plug-short-cord-25-thick.svg")                
-                iconSize: ConnectionTheme.plugButtonIconSize + 4 // Reserved layout space
-                iconVisualSize: 32 // Artwork size
-                iconOffsetX: -11
-                iconOffsetY: 7
-
-
-                iconTextSpacing: 0 // Layout gap before text
-                
-                selected: root.addingConnection
-                enabled: !root.manager.testing && !root.manager.editing && !root.contentTransitionBusy
-                visualEnabled: !root.manager.testing && !root.manager.editing
-                fadeDisabledState: false
-                onClicked: root.beginConnection()
-            }
         }
         ConnectionSurface {
             objectName: "managerDetailsPanel"
             Layout.fillWidth: true; Layout.fillHeight: true
-            radius: 18; sunken: true; depth: 7; blur: 15; shadowColor: "#ab03101e"; lightColor: "#70345b85"
+            radius: 18; sunken: true; depth: 7; blur: 15; shadowColor: "#ab03101e"; lightColor: AccentTheme.color("#70345b85")
             lightOffset: Qt.point(-5, -5); lightBlur: 12
             crispOutline: true
             Item {
@@ -548,34 +734,11 @@ Item {
                 }
                 Text {
                     width: parent.width
-                    text: "Add a connection to save your authentication settings and test them."
+                    text: "Use Add connection above the profile list to save your authentication settings and test them."
                     horizontalAlignment: Text.AlignHCenter
                     wrapMode: Text.Wrap
                     color: ConnectionTheme.muted
                     font.family: ConnectionTheme.body; font.pixelSize: 12
-                }
-                ConnectionButton {
-                    id: emptyAddButton
-                    objectName: "managerEmptyAddButton"
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    text: "Add a connection"
-                    symbol: "add"
-                    variant: "primary"
-                    visualEnabled: !root.manager.editing && !root.manager.testing
-                    fadeDisabledState: false
-                    // Empty-state Add button: its own artwork and positioning.
-                    iconSource: Qt.resolvedUrl("../../../assets/icons/svg/plugs/connections/x-disconnected-wall-socket-plug-short-cord-25-thick.svg")
-                    iconSize: ConnectionTheme.plugButtonIconSize + 4 // Reserved layout space
-                    iconVisualSize: 32 // Artwork size
-                    iconOffsetX: -8
-                    iconOffsetY: 7
-                    iconTextSpacing: 0 // Layout gap before text
-
-                    width: 220
-                    height: 40
-                    font.pixelSize: 13                    
-                                     
-                    onClicked: root.beginConnection()
                 }
             }
             ScrollView {
@@ -586,6 +749,15 @@ Item {
                 contentWidth: availableWidth
                 clip: true
                 ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+                ScrollBar.vertical: ScrollBar {
+                    objectName: "managerDetailsVerticalBar"
+                    parent: detailsScroll
+                    x: detailsScroll.width - width - 2
+                    y: 12
+                    width: ConnectionTheme.scrollBarWidth
+                    height: Math.max(0, detailsScroll.height - 24)
+                    policy: ScrollBar.AsNeeded
+                }
             // ScrollView's implicit Flickable clips even when ScrollView.clip
             // is false. Put the inset on the content, not the viewport, so the
             // buttons' rounded shadows can fade into the surrounding card.
@@ -596,6 +768,7 @@ Item {
                 clip: true
                 boundsBehavior: Flickable.StopAtBounds
                 flickableDirection: Flickable.VerticalFlick
+                pixelAligned: false // Preserve subpixel motion; divider edges handle coverage.
                 readonly property real sideInset: 20 - 7 * root.helpProgress
                 readonly property real topInset: 19 - 5 * root.helpProgress
                 readonly property real bottomInset: 15 - 2 * root.helpProgress
@@ -604,7 +777,10 @@ Item {
             ColumnLayout {
                 id: detailsColumn
                 x: detailsViewport.sideInset; y: detailsViewport.topInset
-                width: detailsViewport.width - detailsViewport.sideInset * 2
+                // Preserve the text gap when the help drawer narrows the inset
+                // that separates the content from the scrollbar.
+                width: detailsViewport.width - detailsViewport.sideInset -
+                    Math.max(detailsViewport.sideInset, ConnectionTheme.scrollBarGutter + 2)
                 height: Math.max(implicitHeight, detailsViewport.height - detailsViewport.topInset - detailsViewport.bottomInset)
                 spacing: 0
                 GridLayout {
@@ -640,7 +816,7 @@ Item {
                         symbol: root.manager.testing ? "refresh" :
                                 root.manager.testResult === "passed" ? "testPassed" :
                                 root.manager.testResult === "failed" ? "testFailed" : "bolt"
-                        variant: "secondary"
+                        variant: "normal"
                         Accessible.description: root.manager.testing ? "Connection test running" :
                             root.manager.testResult === "passed" ? "Last test passed for these saved credentials. You can test again." :
                             root.manager.testResult === "failed" ? "Last test failed for these saved credentials. You can test again." :
@@ -711,13 +887,21 @@ Item {
                         ConnectionCombo {
                             id: methodBox
                             objectName: "managerMethodSelector"; anchors.fill: parent
-                            model: ["Interactive", "Device code", "Client credentials"]
+                            model: ["Interactive", "Device code", "Client credentials — Secret", "Client credentials — Certificate"]
                             enabled: root.manager.editing && !root.manager.testing
                             visualEnabled: root.manager.editing && !root.manager.testing
                             transitionOpacity: methodText.incomingOpacity
                             transitionOffset: methodText.incomingOffset
-                            onActivated: root.markDraftEdited()
-                            onCurrentIndexChanged: if (currentIndex !== 2 && root.helpTopic === "secret") root.closeHelp()
+                            onActivated: {
+                                root.markDraftEdited()
+                                if (currentIndex === 3) certificateEditor.validate()
+                                else root.manager.resetCertificateDraft()
+                            }
+                            onCurrentIndexChanged: {
+                                if ((currentIndex !== 2 && root.helpTopic === "secret") ||
+                                    (currentIndex !== 3 && root.certificateHelpTopics.includes(root.helpTopic)))
+                                    root.closeHelp()
+                            }
                         Text {
                             objectName: "managerMethodValidationError"
                             anchors.left: parent.left; anchors.right: parent.right
@@ -791,105 +975,33 @@ Item {
                         onEdited: root.markDraftEdited()
                     }
                 }
+                CertificateEditor {
+                    id: certificateEditor
+                    objectName: "managerCertificateEditor"
+                    Layout.fillWidth: true; Layout.topMargin: visible ? 14 : 0
+                    visible: methodBox.currentIndex === 3
+                    manager: root.manager
+                    contentScale: root.popup.homePage ? root.popup.contentScale : 1
+                    editing: root.manager.editing
+                    clientId: clientField.text; tenantId: tenantField.text
+                    connectionName: nameField.text
+                    helpTopic: root.helpTopic
+                    onHelpRequested: (topic, trigger) => root.toggleHelp(topic, trigger)
+                    onHelpDismissRequested: root.closeHelp()
+                    onEdited: root.markDraftEdited()
+                }
                 Text {
                     objectName: "managerFieldGuidance"
+                    visible: methodBox.currentIndex !== 3 || !certificateEditor.summaryVisible
                     Layout.fillWidth: true; Layout.topMargin: 10
                     text: root.addingConnection ? "Enter your Entra app registration values. Testing can be done after saving." :
+                          methodBox.currentIndex === 3 ? "Only upload the public certificate to Entra. The private key stays on this computer." :
                           root.manager.editing ? "Save your changes securely. Leave the secret blank to retain it for the same Client ID." :
                           methodBox.currentIndex === 2 ? (root.manager.editor.hasSecret ? "A client secret is stored securely. Choose Edit to replace it." : "No client secret is stored. Choose Edit to add one before testing.") :
                           "Saved identifiers are shown for reference. Choose Edit to make changes."
                     color: ConnectionTheme.muted; font.family: ConnectionTheme.body; font.pixelSize: 11; lineHeight: 1.5; wrapMode: Text.Wrap
                 }
                 Item { Layout.fillHeight: true; Layout.minimumHeight: 11 }
-                Item {
-                    Layout.fillWidth: true; Layout.preferredHeight: detailActions.implicitHeight
-                Flow {
-                    id: detailActions
-                    objectName: "managerDetailActions"
-                    width: parent.width; spacing: 8
-                    ConnectionButton {
-                        id: editButton
-                        objectName: "managerEditButton"
-                        visible: !root.manager.editing; text: "Edit"; symbol: "edit"; variant: "secondary"
-                        selected: root.manager.editing && !root.addingConnection
-                        enabled: root.canAct
-                        visualEnabled: root.canAct; fadeDisabledState: false
-                        transitionBusy: root.contentTransitionBusy
-                        transitionOpacity: editChange.incomingOpacity
-                        transitionOffset: editChange.incomingOffset
-                        onClicked: root.changeContent(() => root.manager.beginEdit(), true, false, true)
-                    }
-                    ConnectionButton {
-                        id: removeButton
-                        objectName: "managerRemoveButton"
-                        iconSize: 16
-                        iconVisualSize: 16
-                        visible: !root.manager.editing; text: "Remove"; symbol: "trash"; variant: "danger"
-                        enabled: root.canAct
-                        visualEnabled: root.canAct; fadeDisabledState: false
-                        transitionBusy: root.contentTransitionBusy
-                        transitionOpacity: removeChange.incomingOpacity
-                        transitionOffset: removeChange.incomingOffset
-                        onClicked: removeDialog.open()
-                    }
-                    ConnectionButton {
-                        id: useButton
-                        objectName: "managerUseButton"
-                        // Reserve the longer caption so its outgoing text never
-                        // spills past a shrinking surface. Keep the shared check
-                        // icon in the same slot while only the wording changes.
-                        alignLeft: true
-                        implicitWidth: Math.max(Math.ceil(activeCaptionMetrics.advanceWidth),
-                            Math.ceil(useCaptionMetrics.advanceWidth)) + iconSize + iconTextSpacing + 28
-                        TextMetrics { id: activeCaptionMetrics; font: useButton.font; text: "Active connection" }
-                        // TextMetrics { id: useCaptionMetrics; font: useButton.font; text: "Set as active" }
-                        TextMetrics { id: useCaptionMetrics; font: useButton.font; text: "Activate connection" }                        
-                        visible: !root.manager.editing
-                        // text: root.selectedIsActive ? "Active connection" : "Set as active"; symbol: "checkActive"; variant: "good"
-                        text: root.selectedIsActive ? "Active connection" : "Activate connection"; symbol: "checkActive"; variant: "good"                        
-                        enabled: root.canAct && !root.selectedIsActive
-                        visualEnabled: root.canAct && !root.selectedIsActive; fadeDisabledState: false
-                        transitionBusy: root.contentTransitionBusy
-                        transitionOpacity: useChange.incomingOpacity
-                        transitionOffset: useChange.incomingOffset
-                        labelTransitionOpacity: useLabelChange.incomingOpacity
-                        labelTransitionOffset: useLabelChange.incomingOffset
-                        onClicked: useDialog.open()
-                    }
-                    ConnectionButton {
-                        id: cancelButton
-                        objectName: "managerCancelButton"
-                        visualEnabled: !root.manager.testing; fadeDisabledState: false
-                        transitionBusy: root.contentTransitionBusy
-                        transitionOpacity: cancelChange.incomingOpacity
-                        transitionOffset: cancelChange.incomingOffset
-                        visible: root.manager.editing; text: "Cancel"; variant: "warning"
-                        onClicked: {
-                            if (root.addingConnection)
-                                root.changeContent(() => root.manager.cancelEdit(), false, true)
-                            else root.guardDraft(() => root.changeContent(() => root.manager.cancelEdit(), false, true))
-                        }
-                    }
-                    ConnectionButton {
-                        id: saveButton
-                        objectName: "managerSaveButton"
-                        visualEnabled: root.manager.editing && !root.manager.testing && root.draftValidation.valid
-                        fadeDisabledState: false
-                        transitionBusy: root.contentTransitionBusy
-                        transitionOpacity: saveChange.incomingOpacity
-                        transitionOffset: saveChange.incomingOffset
-                        visible: root.manager.editing && (root.addingConnection ||
-                            (root.draftChanged && root.draftValidation.valid))
-                        text: root.addingConnection ? "Create connection" : "Save changes"
-                        symbol: root.addingConnection ? "create" : "save"; variant: "primary"
-                        enabled: visible && root.manager.editing && !root.manager.testing && root.draftValidation.valid && !root.contentTransitionBusy
-                        onClicked: if (enabled) root.changeContent(() => root.manager.saveConnection(
-                            nameField.text, tenantField.text, clientField.text,
-                            methodBox.currentIndex === 2 ? secretField.text : "",
-                            ["interactive", "device_code", "client_credentials"][methodBox.currentIndex]), false, true)
-                    }
-                }
-                }
             }
             }
             }
@@ -904,8 +1016,8 @@ Item {
         anchors.leftMargin: 26 - 11 * root.helpProgress; anchors.rightMargin: 26 - 11 * root.helpProgress; anchors.bottomMargin: 22
         height: Math.max(42, statusContent.implicitHeight + 20)
         radius: 12; sunken: true; recessedFill: true; depth: 3; blur: 8
-        lightOffset: Qt.point(-2, -2); lightBlur: 6; lightColor: "#44345b85"
-        borderColor: root.manager.statusKind === "success" ? "#77327e6e" : root.manager.statusKind === "error" ? "#77d85870" : root.manager.statusKind === "warning" ? "#77c58d47" : "#345b85"
+        lightOffset: Qt.point(-2, -2); lightBlur: 6; lightColor: AccentTheme.color("#44345b85")
+        borderColor: root.manager.statusKind === "success" ? "#77327e6e" : root.manager.statusKind === "error" ? "#77d85870" : root.manager.statusKind === "warning" ? "#77c58d47" : AccentTheme.color("#345b85")
         ColumnLayout {
             id: statusContent
             anchors.left: parent.left; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter
@@ -937,7 +1049,7 @@ Item {
                 Text {
                     Layout.fillWidth: true
                     text: root.manager.deviceCode ? "Sign-in code: " + root.manager.deviceCode : "Authenticating…"
-                    font.family: ConnectionTheme.mono; font.pixelSize: 12; color: "#65caff"
+                    font.family: ConnectionTheme.mono; font.pixelSize: 12; color: AccentTheme.color("#65caff")
                 }
                 Flow {
                 Layout.fillWidth: root.compactStatus
@@ -966,7 +1078,7 @@ Item {
                 ConnectionButton {
                     id: cancelTestButton
                     objectName: "managerCancelTestButton"
-                    text: "Cancel test"; variant: "warning"
+                    text: "Cancel test"; variant: "cancel"
                     enabled: root.manager.testing
                     onClicked: root.manager.cancelTest()
                 }
@@ -999,6 +1111,11 @@ Item {
             onDismissed: root.closeHelp()
         }
     }
+    ProfileAvatarPicker {
+        id: avatarPicker
+        objectName: "managerAvatarPicker"
+        manager: root.manager
+    }
     ConnectionConfirmDialog {
         id: discardDialog; objectName: "managerDiscardDialog"
         title: "Discard unsaved changes?"; confirmText: "Discard changes"; cancelText: "Keep editing"; destructive: true; discardAction: true
@@ -1018,8 +1135,7 @@ Item {
     }
     ConnectionConfirmDialog {
         id: useDialog; objectName: "managerUseDialog"
-        // title: "Set as active connection?"; confirmText: "Set as active"
-        title: "Set as active connection?"; confirmText: "Activate connection"        
+        title: "Set as active connection?"; confirmText: "Set Active"
         message: "Use this saved connection as the default for azauthlib. Its saved authentication settings will be used."
         onAccepted: root.changeContent(() => root.manager.useSelected(), null)
     }

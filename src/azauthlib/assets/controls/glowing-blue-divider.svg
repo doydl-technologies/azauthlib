@@ -7,7 +7,7 @@
   <defs>
 
 
-    <linearGradient id="divider-color" gradientUnits="userSpaceOnUse" x1="10" y1="16" x2="1290" y2="16">    
+    <linearGradient id="divider-color" gradientUnits="userSpaceOnUse" x1="10" y1="16" x2="1290" y2="16">
       <stop offset="0" stop-color="#2563EB" stop-opacity="0"/>
       <stop offset="0.12" stop-color="#2563EB" stop-opacity="0.45"/>
       <stop offset="0.4" stop-color="#38A8FF" stop-opacity="0.85"/>
@@ -25,9 +25,9 @@
   <!-- Glow strength is controlled by opacity and stroke width. -->
 
 
-  <line id="glow" x1="10" y1="16" x2="1290" y2="16" stroke="url(#divider-color)" stroke-width="5" opacity="0.4" filter="url(#divider-glow)"/>  
+  <line id="glow" x1="10" y1="16" x2="1290" y2="16" stroke="url(#divider-color)" stroke-width="5" opacity="0.4" filter="url(#divider-glow)"/>
   <!-- The core stroke defines the sharp line thickness. -->
 
 
-  <line id="divider" x1="10" y1="16" x2="1290" y2="16" stroke="url(#divider-color)" stroke-width="1"/>  
+  <line id="divider" x1="10" y1="16" x2="1290" y2="16" stroke="url(#divider-color)" stroke-width="1"/>
 </svg>

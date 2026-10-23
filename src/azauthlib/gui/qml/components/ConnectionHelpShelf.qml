@@ -30,7 +30,7 @@ Item {
         id: contentTransition
         target: root; property: "copyOpacity"; from: 0.3; to: 1; duration: ConnectionTheme.reducedMotion ? 0 : 340
     }
-    Rectangle { x: 0; y: 17; width: 1; height: parent.height - 34; color: "#4573b1dd" }
+    Rectangle { x: 0; y: 17; width: 1; height: parent.height - 34; color: AccentTheme.color("#4573b1dd") }
     ColumnLayout {
         anchors.fill: parent; anchors.leftMargin: 14; anchors.rightMargin: 14
         anchors.topMargin: 20; anchors.bottomMargin: 16
@@ -56,7 +56,8 @@ Item {
                     anchors.centerIn: parent
                     width: 22
                     height: 22          
-                    source: Qt.resolvedUrl("../../../assets/icons/svg/status/information-alerts/Monocolor-Filled-Sky-Blue-info-borderless.svg")                         
+                    source: AccentTheme.customAccent ? AccentTheme.artwork("Monocolor-Filled-Sky-Blue-info-borderless.svg") :
+                        Qt.resolvedUrl("../../../assets/icons/svg/status/information-alerts/Monocolor-Filled-Sky-Blue-info-borderless.svg")
                     sourceSize: Qt.size(96, 96)
                     fillMode: Image.PreserveAspectFit
                     smooth: true; mipmap: true
@@ -80,16 +81,28 @@ Item {
         ConnectionSurface {
             Layout.fillWidth: true; Layout.fillHeight: true
             radius: 16; sunken: true; depth: 7; blur: 15
-            shadowColor: "#ab03101e"; lightColor: "#70345b85"
+            shadowColor: "#ab03101e"; lightColor: AccentTheme.color("#70345b85")
             lightOffset: Qt.point(-5, -5); lightBlur: 12; crispOutline: true
             ScrollView {
                 id: helpScroll
                 objectName: "managerHelpScroll"
                 anchors.fill: parent; anchors.margins: 16
+                anchors.rightMargin: 6
+                rightPadding: ConnectionTheme.scrollBarGutter
                 contentWidth: availableWidth
                 clip: true
                 ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+                ScrollBar.vertical: ScrollBar {
+                    objectName: "managerHelpVerticalBar"
+                    parent: helpScroll
+                    x: helpScroll.width - width
+                    y: 0
+                    width: ConnectionTheme.scrollBarWidth
+                    height: helpScroll.height
+                    policy: ScrollBar.AsNeeded
+                }
                 ColumnLayout {
+                    objectName: "managerHelpScrollContent"
                     width: helpScroll.availableWidth; spacing: 18
                     opacity: root.copyOpacity
                     Loader {
@@ -108,7 +121,7 @@ Item {
                             wrapMode: TextEdit.Wrap
                             readOnly: true; selectByMouse: true
                             DrawerLinkCursor { textItem: aboutDocument }
-                            color: "#c8daed"; selectionColor: "#345b85"; selectedTextColor: "#edf4ff"
+                            color: "#c8daed"; selectionColor: AccentTheme.color("#345b85"); selectedTextColor: "#edf4ff"
                             font.family: ConnectionTheme.body
                             font.pixelSize: 10                            
                             Component.onCompleted: root.markdownDocumentReady(textDocument)
@@ -155,14 +168,14 @@ Item {
                         visible: !root.documentVisible
                         Layout.fillWidth: true; implicitHeight: noteCopy.implicitHeight + 24
                         radius: 10; topColor: "#1a3856"; middleColor: "#142f4d"; bottomColor: "#102b49"
-                        depth: 3; blur: 8; borderColor: "#80345b85"
-                        Rectangle { x: 0; y: 12; width: 2; height: parent.height - 24; radius: 1; color: "#9838a8ff" }
+                        depth: 3; blur: 8; borderColor: AccentTheme.color("#80345b85")
+                        Rectangle { x: 0; y: 12; width: 2; height: parent.height - 24; radius: 1; color: AccentTheme.color("#9838a8ff") }
                         ColumnLayout {
                             id: noteCopy
                             x: 14; y: 12; width: parent.width - 26; spacing: 5
                             Text {
                                 Layout.fillWidth: true; text: (root.topicData.noteTitle || "").toUpperCase()
-                                color: "#a2d2f6"; font.family: ConnectionTheme.body; font.pixelSize: 9
+                                color: AccentTheme.color("#a2d2f6"); font.family: ConnectionTheme.body; font.pixelSize: 9
                                 font.weight: Font.ExtraBold; font.letterSpacing: 0.85; wrapMode: Text.Wrap
                             }
                             Text {
@@ -197,7 +210,7 @@ Item {
                                     radius: 7; sunken: true; recessedFill: true; depth: 2; blur: 4
                                     Text {
                                         anchors.centerIn: parent; text: String(stepRow.index + 1).padStart(2, "0")
-                                        color: "#96c8f1"; font.family: ConnectionTheme.mono; font.pixelSize: 9
+                                        color: AccentTheme.color("#96c8f1"); font.family: ConnectionTheme.mono; font.pixelSize: 9
                                     }
                                 }
                                 Text {

@@ -1,0 +1,397 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1254" height="1254" viewBox="0 0 1254 1254" fill="none" color-interpolation="sRGB">
+  <title>Light neumorphic plugged-in electric plug, outlet, and add badge</title>
+  <desc>Editable vector reconstruction with a raised pearl-gray circular surface, a fully seated electrical plug and curved cable, an outlet, and a raised plus badge. Transparent canvas; no embedded raster image.</desc>
+  <!-- EDITING: colors live in the gradients; light direction is upper-left.
+       Move a component using its group's translate(X Y). All shapes are vectors.
+       For smaller display, edit width and height without changing the viewBox. -->
+  <defs>
+    <radialGradient id="disc-face" cx="36%" cy="28%" r="79%">
+      <stop stop-color="#F0F3F7" />
+      <stop offset="0.47" stop-color="#E5EAF0" />
+      <stop offset="0.84" stop-color="#DCE2E9" />
+      <stop offset="1" stop-color="#C8CFD8" />
+    </radialGradient>
+    <linearGradient id="disc-edge" x1="250" y1="230" x2="1000" y2="1050" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF" />
+      <stop offset="0.48" stop-color="#F8FAFD" />
+      <stop offset="1" stop-color="#AEB7C2" />
+    </linearGradient>
+    <radialGradient id="disc-rim" cx="50%" cy="50%" r="50%">
+      <stop offset="0.88" stop-color="#FFFFFF" stop-opacity="0" />
+      <stop offset="0.945" stop-color="#FFFFFF" stop-opacity="0.08" />
+      <stop offset="0.977" stop-color="#FFFFFF" stop-opacity="0.75" />
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0.26" />
+    </radialGradient>
+    <linearGradient id="disc-bottom-rim" x1="620" y1="900" x2="620" y2="1096" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ABB4C0" stop-opacity="0" />
+      <stop offset="1" stop-color="#9BA5B2" stop-opacity="0.46" />
+    </linearGradient>
+    <linearGradient id="plate-side" x1="650" y1="450" x2="915" y2="810" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F4F7FA" />
+      <stop offset="0.65" stop-color="#D0D7DF" />
+      <stop offset="1" stop-color="#9DA6B2" />
+    </linearGradient>
+    <linearGradient id="plate-face" x1="673" y1="448" x2="885" y2="815" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F1F4F8" />
+      <stop offset="0.53" stop-color="#E5EAF0" />
+      <stop offset="1" stop-color="#DBE2EA" />
+    </linearGradient>
+    <linearGradient id="plate-outline" x1="671" y1="447" x2="882" y2="817" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF" />
+      <stop offset="0.42" stop-color="#F7F9FC" />
+      <stop offset="1" stop-color="#B8C1CC" />
+    </linearGradient>
+    <radialGradient id="socket-well" cx="72%" cy="70%" r="92%">
+      <stop stop-color="#E9EDF2" />
+      <stop offset="0.45" stop-color="#DDE3E9" />
+      <stop offset="0.74" stop-color="#B9C1CA" />
+      <stop offset="1" stop-color="#777F89" />
+    </radialGradient>
+    <linearGradient id="socket-rim" x1="718" y1="536" x2="820" y2="740" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#B5BDC7" />
+      <stop offset="0.35" stop-color="#D3DAE3" />
+      <stop offset="0.72" stop-color="#FFFFFF" />
+      <stop offset="1" stop-color="#F9FCFF" />
+    </linearGradient>
+    <linearGradient id="slot-metal" x1="741" y1="600" x2="813" y2="672" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#505962" />
+      <stop offset="0.55" stop-color="#7A838C" />
+      <stop offset="1" stop-color="#9DA5AE" />
+    </linearGradient>
+    <linearGradient id="prong-metal" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#F9FCFF" />
+      <stop offset="0.23" stop-color="#DEE3E8" />
+      <stop offset="0.58" stop-color="#A1A9B2" />
+      <stop offset="1" stop-color="#626B75" />
+    </linearGradient>
+    <linearGradient id="plug-face" x1="420" y1="565" x2="617" y2="757" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF" />
+      <stop offset="0.28" stop-color="#F0F3F7" />
+      <stop offset="0.64" stop-color="#E1E6ED" />
+      <stop offset="1" stop-color="#C9D0D9" />
+    </linearGradient>
+    <radialGradient id="plug-highlight" cx="28%" cy="22%" r="72%">
+      <stop stop-color="#FFFFFF" stop-opacity="0.85" />
+      <stop offset="0.5" stop-color="#FFFFFF" stop-opacity="0.12" />
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="cord-fill" x1="310" y1="694" x2="350" y2="738" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF" />
+      <stop offset="0.25" stop-color="#E9EDF1" />
+      <stop offset="0.65" stop-color="#B6BEC7" />
+      <stop offset="1" stop-color="#828D99" />
+    </linearGradient>
+    <linearGradient id="cord-fade" x1="245" y1="852" x2="309" y2="778" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#000000" />
+      <stop offset="0.22" stop-color="#000000" />
+      <stop offset="0.72" stop-color="#D4D4D4" />
+      <stop offset="1" stop-color="#FFFFFF" />
+    </linearGradient>
+    <linearGradient id="badge-fill" x1="838" y1="424" x2="932" y2="548" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF" />
+      <stop offset="0.44" stop-color="#F1F4F8" />
+      <stop offset="1" stop-color="#D4DBE4" />
+    </linearGradient>
+    <linearGradient id="plus-fill" x1="851" y1="445" x2="916" y2="520" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4B535E" />
+      <stop offset="0.55" stop-color="#686F79" />
+      <stop offset="1" stop-color="#868D96" />
+    </linearGradient>
+    <filter id="disc-shadow" x="-30%" y="-30%" width="165%" height="165%" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="17" result="blur" />
+      <feOffset in="blur" dx="16" dy="22" result="offset" />
+      <feFlood flood-color="#111821" flood-opacity="0.62" />
+      <feComposite in2="offset" operator="in" result="shadow" />
+      <feMerge>
+        <feMergeNode in="shadow" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    <filter id="disc-soft-light" x="-25%" y="-25%" width="150%" height="150%" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="10" result="blur" />
+      <feOffset in="blur" dx="-9" dy="-11" result="offset" />
+      <feFlood flood-color="#FFFFFF" flood-opacity="0.55" />
+      <feComposite in2="offset" operator="in" result="light" />
+      <feMerge>
+        <feMergeNode in="light" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    <filter id="raised-shadow" x="-65%" y="-50%" width="240%" height="240%" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="16" result="blur" />
+      <feOffset in="blur" dx="10" dy="20" result="offset" />
+      <feFlood flood-color="#444E5B" flood-opacity="0.46" />
+      <feComposite in2="offset" operator="in" result="shadow" />
+      <feMerge>
+        <feMergeNode in="shadow" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    <filter id="pin-shadow" x="-40%" y="-70%" width="200%" height="300%" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="8" result="blur" />
+      <feOffset in="blur" dx="5" dy="10" result="offset" />
+      <feFlood flood-color="#525C68" flood-opacity="0.33" />
+      <feComposite in2="offset" operator="in" result="shadow" />
+      <feMerge>
+        <feMergeNode in="shadow" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    <filter id="surface-bevel" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="soft" />
+      <feOffset in="soft" dx="3" dy="4" result="positive" />
+      <feComposite in="SourceAlpha" in2="positive" operator="out" result="top-edge" />
+      <feFlood flood-color="#FFFFFF" flood-opacity="0.9" />
+      <feComposite in2="top-edge" operator="in" result="light" />
+      <feOffset in="soft" dx="-2" dy="-3" result="negative" />
+      <feComposite in="SourceAlpha" in2="negative" operator="out" result="bottom-edge" />
+      <feFlood flood-color="#7D8998" flood-opacity="0.25" />
+      <feComposite in2="bottom-edge" operator="in" result="dark" />
+      <feMerge>
+        <feMergeNode in="SourceGraphic" />
+        <feMergeNode in="dark" />
+        <feMergeNode in="light" />
+      </feMerge>
+    </filter>
+    <filter id="well-inset" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="7" result="blur" />
+      <feOffset in="blur" dx="10" dy="10" result="shifted" />
+      <feComposite in="SourceAlpha" in2="shifted" operator="out" result="edge" />
+      <feFlood flood-color="#414B57" flood-opacity="0.38" />
+      <feComposite in2="edge" operator="in" result="inset" />
+      <feMerge>
+        <feMergeNode in="SourceGraphic" />
+        <feMergeNode in="inset" />
+      </feMerge>
+    </filter>
+    <filter id="slot-inset" x="-25%" y="-20%" width="150%" height="140%" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="1.6" result="blur" />
+      <feOffset in="blur" dx="2" dy="3" result="shifted" />
+      <feComposite in="SourceAlpha" in2="shifted" operator="out" result="edge" />
+      <feFlood flood-color="#303944" flood-opacity="0.5" />
+      <feComposite in2="edge" operator="in" result="inset" />
+      <feMerge>
+        <feMergeNode in="SourceGraphic" />
+        <feMergeNode in="inset" />
+      </feMerge>
+    </filter>
+    <mask id="cord-tip-fade" maskUnits="userSpaceOnUse" x="210" y="600" width="250" height="300" style="mask-type:luminance">
+      <rect x="210" y="600" width="250" height="300" fill="url(#cord-fade)" />
+    </mask>
+    <clipPath id="disc-clip">
+      <ellipse cx="620" cy="627" rx="470" ry="466" />
+    </clipPath>
+    <clipPath id="plug-clip">
+      <path d="M430 594C455 594 465 583 480 565C498 544 523 532 550 532H588C606 532 614 543 614 565V731C614 753 607 765 590 765H554C522 765 494 753 477 733C463 717 453 712 432 712C416 712 408 704 408 683V625C408 605 415 596 430 594Z" />
+    </clipPath>
+    <filter id="sculpted-bevel" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="9" result="soft" />
+      <feOffset in="soft" dx="9" dy="10" result="positive" />
+      <feComposite in="SourceAlpha" in2="positive" operator="out" result="top-edge" />
+      <feFlood flood-color="#FFFFFF" flood-opacity="0.85" />
+      <feComposite in2="top-edge" operator="in" result="light" />
+      <feOffset in="soft" dx="-7" dy="-8" result="negative" />
+      <feComposite in="SourceAlpha" in2="negative" operator="out" result="bottom-edge" />
+      <feFlood flood-color="#8A95A3" flood-opacity="0.30" />
+      <feComposite in2="bottom-edge" operator="in" result="dark" />
+      <feMerge>
+        <feMergeNode in="SourceGraphic" />
+        <feMergeNode in="dark" />
+        <feMergeNode in="light" />
+      </feMerge>
+    </filter>
+    <linearGradient id="seated-plug-face" gradientUnits="userSpaceOnUse" x1="661" y1="552" x2="818" y2="723">
+      <stop offset="0" stop-color="#FFFFFF" />
+      <stop offset=".32" stop-color="#F1F4F8" />
+      <stop offset=".70" stop-color="#DCE3EB" />
+      <stop offset="1" stop-color="#BAC4D0" />
+    </linearGradient>
+    <filter id="seated-contact-shadow" x="-30%" y="-25%" width="170%" height="170%" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="5" result="blur" />
+      <feOffset in="blur" dx="3" dy="5" result="offset" />
+      <feFlood flood-color="#3B4655" flood-opacity="0.55" />
+      <feComposite in2="offset" operator="in" result="shadow" />
+      <feMerge>
+        <feMergeNode in="shadow" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    <!-- CYAN BLUE PLUS GRADIENT -->
+
+    <linearGradient id="cyan-plus-fill"
+      x1="0%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" stop-color="#B9FFFF"/>
+      <stop offset="28%" stop-color="#62EAFF"/>
+      <stop offset="60%" stop-color="#00C8FF"/>
+      <stop offset="100%" stop-color="#168CFF"/>
+    </linearGradient>
+
+    <!-- OUTER NEON GLOW -->
+
+    <filter id="cyan-plus-bloom"
+      x="-120%" y="-120%"
+      width="340%" height="340%"
+      color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="17"/>
+    </filter>
+
+    <!-- INNER NEON GLOW -->
+
+    <filter id="cyan-plus-core-glow"
+      x="-120%" y="-120%"
+      width="340%" height="340%"
+      color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="6"/>
+    </filter>
+
+    <!-- Editable cyan glows for the main circular disc and smaller add badge. -->
+    <filter id="cyan-disc-wide-bloom" filterUnits="userSpaceOnUse" x="20" y="15" width="1210" height="1220" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="19"/>
+    </filter>
+    <filter id="cyan-disc-tight-bloom" filterUnits="userSpaceOnUse" x="50" y="50" width="1140" height="1150" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="5"/>
+    </filter>
+    <filter id="cyan-badge-wide-bloom" filterUnits="userSpaceOnUse" x="738" y="338" width="290" height="290" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="13"/>
+    </filter>
+    <filter id="cyan-badge-tight-bloom" filterUnits="userSpaceOnUse" x="763" y="363" width="240" height="240" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="5"/>
+    </filter>
+  <filter id="spin-soft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="12"/></filter><filter id="spin-tight" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="4"/></filter></defs>
+
+  <!-- 1: Rounded background disc, preserving transparent exterior. -->
+  <g id="circular-surface" transform="translate(0 0)">
+    <g filter="url(#disc-shadow)">
+      <g filter="url(#disc-soft-light)">
+        <ellipse cx="620" cy="627" rx="470" ry="466" fill="none" />
+      </g>
+    </g>
+
+    <!-- CYAN OUTER DISC HALO: independent editable ellipse layers. -->
+    <g id="cyan-disc-glow" fill="none" pointer-events="none">
+      <ellipse id="disc-glow-diffuse" cx="620" cy="627" rx="471" ry="467" stroke="#00D9FF" stroke-width="9" opacity="0.55" filter="url(#cyan-disc-wide-bloom)"/>
+      <ellipse id="disc-glow-near" cx="620" cy="627" rx="471" ry="467" stroke="#00E5FF" stroke-width="5" opacity="0.82" filter="url(#cyan-disc-tight-bloom)"/>
+    </g>
+    <ellipse cx="620" cy="627" rx="467" ry="463" fill="none" />
+    <ellipse cx="620" cy="627" rx="469" ry="465" stroke="url(#disc-edge)" stroke-width="2.5" />
+
+    <!-- Thin luminous cyan rim on top of the existing vector bevel. -->
+    <ellipse id="disc-cyan-edge" cx="620" cy="627" rx="470" ry="466" fill="none" stroke="#80F9FF" stroke-width="2.7" stroke-opacity="0.98" pointer-events="none"/>
+    <!-- Rotating rim specular highlight, frame 05/16 -->
+    <g id="rim-rotating-shine" fill="none" stroke-linecap="round" pointer-events="none">
+      <path d="M1064.39,475.29 L1067.67,485.06 L1070.72,494.91 L1073.56,504.82 L1076.17,514.79 L1078.56,524.82 L1080.73,534.89 L1082.67,545.01 L1084.38,555.17 L1085.87,565.37 L1087.13,575.59 L1088.16,585.85 L1088.97,596.12 L1089.54,606.40 L1089.89,616.70 L1090.00,627.00 L1089.89,637.30 L1089.54,647.60 L1088.97,657.88 L1088.16,668.15 L1087.13,678.41 L1085.87,688.63 L1084.38,698.83 L1082.67,708.99 L1080.73,719.11 L1078.56,729.18 L1076.17,739.21 L1073.56,749.18 L1070.72,759.09 L1067.67,768.94 L1064.39,778.71" stroke="#00DFFF" stroke-width="23" opacity=".55" filter="url(#spin-soft)"/>
+      <path d="M1079.73,530.11 L1081.05,536.49 L1082.28,542.88 L1083.42,549.29 L1084.47,555.71 L1085.43,562.15 L1086.29,568.59 L1087.07,575.06 L1087.76,581.53 L1088.35,588.01 L1088.86,594.49 L1089.27,600.99 L1089.59,607.49 L1089.82,613.99 L1089.95,620.49 L1090.00,627.00 L1089.95,633.51 L1089.82,640.01 L1089.59,646.51 L1089.27,653.01 L1088.86,659.51 L1088.35,665.99 L1087.76,672.47 L1087.07,678.94 L1086.29,685.41 L1085.43,691.85 L1084.47,698.29 L1083.42,704.71 L1082.28,711.12 L1081.05,717.51 L1079.73,723.89" stroke="#3AEAFF" stroke-width="10" opacity=".92" filter="url(#spin-tight)"/>
+      <path d="M1086.50,570.21 L1086.95,573.98 L1087.37,577.75 L1087.76,581.53 L1088.11,585.31 L1088.44,589.09 L1088.74,592.87 L1089.00,596.66 L1089.24,600.45 L1089.44,604.24 L1089.61,608.03 L1089.75,611.82 L1089.86,615.61 L1089.94,619.41 L1089.98,623.20 L1090.00,627.00 L1089.98,630.80 L1089.94,634.59 L1089.86,638.39 L1089.75,642.18 L1089.61,645.97 L1089.44,649.76 L1089.24,653.55 L1089.00,657.34 L1088.74,661.13 L1088.44,664.91 L1088.11,668.69 L1087.76,672.47 L1087.37,676.25 L1086.95,680.02 L1086.50,683.79" stroke="#E9FFFF" stroke-width="4.2" opacity=".98"/>
+      <path d="M276.26,944.81 L273.29,941.63 L270.36,938.41 L267.45,935.17 L264.57,931.90 L261.72,928.61 L258.91,925.29 L256.12,921.95 L253.37,918.57 L250.65,915.18 L247.96,911.76 L245.30,908.31 L242.68,904.84 L240.08,901.35 L237.52,897.83 L235.00,894.29 L232.51,890.72 L230.05,887.13 L227.62,883.52 L225.23,879.89 L222.87,876.24 L220.55,872.56 L218.26,868.86 L216.01,865.15 L213.79,861.41 L211.61,857.65 L209.46,853.87 L207.35,850.07 L205.27,846.25 L203.23,842.42 L201.23,838.56" stroke="#72F4FF" stroke-width="8" opacity=".50" filter="url(#spin-tight)"/>
+      <path d="M254.74,920.26 L253.37,918.57 L252.00,916.88 L250.65,915.18 L249.30,913.47 L247.96,911.76 L246.63,910.04 L245.30,908.31 L243.98,906.58 L242.68,904.84 L241.38,903.10 L240.08,901.35 L238.80,899.59 L237.52,897.83 L236.26,896.06 L235.00,894.29 L233.75,892.51 L232.51,890.72 L231.27,888.93 L230.05,887.13 L228.83,885.33 L227.62,883.52 L226.42,881.71 L225.23,879.89 L224.05,878.07 L222.87,876.24 L221.71,874.40 L220.55,872.56 L219.40,870.72 L218.26,868.86 L217.13,867.01" stroke="#BFFFFF" stroke-width="2.4" opacity=".78"/>
+    </g>
+    <g clip-path="url(#disc-clip)">
+      <ellipse cx="620" cy="627" rx="455" ry="453" stroke="url(#disc-bottom-rim)" stroke-width="18" opacity="0.55" />
+    </g>
+  </g>
+  <g id="centered-content" transform="translate(-100 0)">
+  <!-- 2: Outlet plate, its extrusion, recessed well, and two socket slots. -->
+  <g id="wall-outlet" transform="translate(0 0)">
+    <g filter="url(#raised-shadow)">
+      <path id="plate-extrusion" d="M692 439L879 466C897 469 905 482 905 505V800C905 829 890 843 867 838L681 798C659 793 651 781 651 758V476C651 449 667 435 692 439Z" fill="url(#plate-side)" />
+      <path id="plate-front" d="M691 437L868 463C887 466 894 480 894 503V794C894 822 883 836 860 831L678 792C659 788 651 777 651 754V476C651 450 666 434 691 437Z" fill="url(#plate-face)" stroke="url(#plate-outline)" stroke-width="3" filter="url(#surface-bevel)" />
+    </g>
+    <g transform="rotate(-5 768 637)">
+      <ellipse id="well-rim" cx="768" cy="637" rx="70" ry="111" fill="url(#socket-rim)" />
+      <ellipse id="recessed-well" cx="768" cy="637" rx="65.5" ry="106.5" fill="url(#socket-well)" filter="url(#well-inset)" />
+    </g>
+    <g id="socket-slots" fill="url(#slot-metal)" stroke="#FFFFFF" stroke-opacity="0.72" stroke-width="1.6" filter="url(#slot-inset)" display="none">
+      <rect x="740" y="598.5" width="18" height="65" rx="9" />
+      <rect x="793" y="608" width="18" height="65" rx="9" />
+    </g>
+    <ellipse id="inserted-contact-seat" cx="768" cy="637" rx="64" ry="105" fill="#667382" opacity=".64" transform="rotate(-5 768 637)" />
+  </g>
+  <!-- 3: Metallic plug pins. -->
+  <g id="plug-assembly" transform="translate(226 0)">
+    <!-- Plugged-in pose: pins are inside the outlet. Change translate(226 0) to reposition the complete plug and cord. -->
+    <g id="plug-pins" transform="translate(0 0)" filter="url(#pin-shadow)" display="none">
+      <rect id="upper-pin" x="604" y="575" width="95" height="48" rx="23" fill="url(#prong-metal)" stroke="#F7FAFD" stroke-opacity="0.4" stroke-width="1" />
+      <rect id="lower-pin" x="604" y="669" width="95" height="48" rx="23" fill="url(#prong-metal)" stroke="#F7FAFD" stroke-opacity="0.4" stroke-width="1" />
+    </g>
+    <g id="curved-cord" transform="translate(0 0)" mask="url(#cord-tip-fade)">
+      <path id="cord" d="M244 846C289 841 317 802 316 753C315 704 349 658 396 654H420" fill="none" stroke="url(#cord-fill)" stroke-width="47" stroke-linecap="round" />
+    </g>
+    <g id="plug-housing" transform="translate(-226 0)">
+      <!-- Seated connector: nose fits inside the socket well; the foreground socket lip occludes its mating edge. -->
+      <g filter="url(#seated-contact-shadow)">
+        <path id="plug-body" d="M650 608C674 608 686 596 697 571C709 546 731 532 753 534C795 537 823 583 823 637C823 692 797 740 757 739C729 740 706 725 693 701C678 682 664 681 649 681C637 681 633 674 633 661V630C633 615 638 609 650 608Z" fill="url(#seated-plug-face)" filter="url(#sculpted-bevel)" />
+      </g>
+      <path id="plug-nose-contour" d="M758 542C792 545 816 586 816 637C816 688 794 728 762 731" stroke="#AAB5C2" stroke-width="2.5" stroke-opacity=".48" stroke-linecap="round" />
+      <ellipse id="cable-entry" cx="647" cy="654" rx="10.5" ry="25.5" fill="#68727D" />
+      <path id="cable-end" d="M385 633C399 629 411 627 421 628C433 639 433 666 421 679C409 679 398 680 388 684Z" transform="translate(226 0)" fill="url(#cord-fill)" />
+      <path d="M650 631C658 641 659 663 651 676" stroke="#4E5965" stroke-opacity=".45" stroke-width="1.8" stroke-linecap="round" />
+    </g>
+  </g>
+  <g id="socket-front-lip" transform="rotate(-5 768 637)">
+    <path id="socket-contact-seam" d="M773 532C808 537 835 581 835 637C835 692 810 735 777 742" stroke="#65717F" stroke-width="5" stroke-opacity=".38" stroke-linecap="round" />
+    <path id="raised-socket-lip" d="M778 528C813 537 840 581 840 637C840 694 814 739 779 747" stroke="#F9FCFF" stroke-width="6" stroke-linecap="round" />
+  </g>
+  <!-- 4: Smooth bent cord. -->
+  <!-- 5: Raised molded plug housing. -->
+
+  <!-- 6: Raised circular add badge and recessed plus. -->
+  <!-- NEUMORPHIC PLUS BADGE -->
+
+  <g id="add-badge">
+    <!-- Cyan halo around the smaller add-badge circle. -->
+    <g id="cyan-badge-glow" fill="none" pointer-events="none">
+      <ellipse id="badge-glow-diffuse" cx="883" cy="483" rx="73" ry="75" stroke="#00DFFF" stroke-width="15" opacity="0.82" filter="url(#cyan-badge-wide-bloom)"/>
+      <ellipse id="badge-glow-near" cx="883" cy="483" rx="73" ry="75" stroke="#00EFFF" stroke-width="7" opacity="0.95" filter="url(#cyan-badge-tight-bloom)"/>
+    </g>
+
+    <g filter="url(#raised-shadow)">
+      <ellipse
+        cx="883" cy="483"
+        rx="72" ry="74"
+        fill="url(#badge-fill)"
+        stroke="#F9FBFE"
+        stroke-width="1.6"
+        filter="url(#sculpted-bevel)"/>
+    </g>
+
+
+    <ellipse id="badge-cyan-edge" cx="883" cy="483" rx="72" ry="74" fill="none" stroke="#A1FCFF" stroke-width="2.2" stroke-opacity="0.92" pointer-events="none"/>
+    <!-- BLUE OUTER GLOW -->
+
+    <path id="plus-neon-outer-halo"
+      d="M874 450C874 444 878 441 883 441C888 441 893 445 893 450V474H916C922 474 926 478 926 483C926 489 922 493 916 493H893V516C893 522 889 526 883 526C878 526 874 522 874 516V493H851C845 493 841 489 841 483C841 478 845 474 851 474H874Z"
+      fill="#008DFF"
+      opacity="0.95"
+      filter="url(#cyan-plus-bloom)"/>
+
+    <!-- CYAN INNER GLOW -->
+
+    <path id="plus-neon-inner-halo"
+      d="M874 450C874 444 878 441 883 441C888 441 893 445 893 450V474H916C922 474 926 478 926 483C926 489 922 493 916 493H893V516C893 522 889 526 883 526C878 526 874 522 874 516V493H851C845 493 841 489 841 483C841 478 845 474 851 474H874Z"
+      fill="#00C8FF"
+      opacity="0.95"
+      filter="url(#cyan-plus-core-glow)"/>
+
+    <!-- SOLID CYAN PLUS -->
+
+    <path id="plus"
+      d="M874 450C874 444 878 441 883 441C888 441 893 445 893 450V474H916C922 474 926 478 926 483C926 489 922 493 916 493H893V516C893 522 889 526 883 526C878 526 874 522 874 516V493H851C845 493 841 489 841 483C841 478 845 474 851 474H874Z"
+      fill="url(#cyan-plus-fill)"
+      stroke="#92EFFF"
+      stroke-width="2.2"
+      stroke-linejoin="round"/>
+
+    <!-- WHITE LIGHT REFLECTION -->
+
+    <path id="plus-neon-highlight"
+      d="M879.4 451V468.5M852.5 478.9H868.7"
+      fill="none"
+      stroke="#E6FFFF"
+      stroke-width="2.7"
+      stroke-linecap="round"
+      opacity="0.82"/>
+
+  </g>
+
+  </g>
+</svg>

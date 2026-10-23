@@ -1,0 +1,69 @@
+<svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="136"
+    height="136"
+    viewBox="0 0 24 24"
+    fill="none"
+    class="activate-profile-icon"
+>
+    <!-- =================================
+         ACTIVATE ICON CONFIGURATION
+
+         OUTER CIRCLE RADIUS
+         Default: 10.00
+
+         INNER CIRCLE RADIUS
+         Small:   5.00
+         Medium:  7.00
+         Large:   8.00
+
+         STROKE WIDTH OPTIONS
+         Thin:     1.25
+         Standard: 1.75
+         Thick:    2.25
+         ================================= -->
+
+    <style>
+        svg {
+            /* Colors */
+            --icon-stroke-color: #cccccc;
+            --inner-fill-color: #cccccc;
+
+            /* Stroke widths */
+            --outer-stroke-width: 1.75;
+
+            /* Circle sizes */
+            --outer-radius: 10;
+            --inner-radius: 7;
+        }
+
+        .outer-circle {
+            fill: none;
+            stroke: var(--icon-stroke-color);
+            stroke-width: var(--outer-stroke-width);
+        }
+
+        .inner-circle {
+            fill: var(--inner-fill-color);
+            stroke: none;
+        }
+    </style>
+
+    <!-- Outer outlined circle -->
+    <circle
+        class="outer-circle"
+        cx="12"
+        cy="12"
+        r="10"
+        style="r: var(--outer-radius)"
+    />
+
+    <!-- Inner filled circle -->
+    <circle
+        class="inner-circle"
+        cx="12"
+        cy="12"
+        r="7"
+        style="r: var(--inner-radius)"
+    />
+</svg>

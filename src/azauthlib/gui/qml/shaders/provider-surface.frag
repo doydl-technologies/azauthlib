@@ -15,11 +15,55 @@ layout(std140, binding = 0) uniform buf {
     float pressState;
     float focusState;
     float unavailableState;
+    float customAccent;
+    float emblemTintStrength;
+    float emblemLightStrength;
+    vec4 accentBase;
+    vec4 accentFocus;
+    vec4 accentGlow;
+    vec4 accentTop;
+    vec4 accentMiddle;
+    vec4 accentBottom;
+    vec4 familya7deff;
+    vec4 family149aff;
+    vec4 family91daff;
+    vec4 family8dd5ff;
+    vec4 family0471ec;
+    vec4 family40baff;
+    vec4 familye6fbff;
+    vec4 family41a7ff;
+    vec4 family1093ff;
+    vec4 family81cfff;
+    vec4 family0965d1;
+    vec4 family1187f4;
+    vec4 family2eb3fd;
+    vec4 family38a8ff;
+    vec4 family345b85;
+    vec4 family55abed;
+    vec4 family388bd0;
+    vec4 family76b9ed;
+    vec4 family1c456d;
+    vec4 family2fa4f7;
+    vec4 family1091ff;
+    vec4 family2b95ef;
+    vec4 family87c7f4;
+    vec4 family43b6ff;
+    vec4 family579bd0;
+    vec4 family325c80;
+    vec4 family92caf7;
+    vec4 family4dabfc;
+    vec4 family87c1eb;
+    vec4 family1369bf;
+    vec4 family5da1d3;
+    vec4 family65aee6;
 };
 
 vec4 color(float r, float g, float b, float a) {
     return vec4(vec3(r, g, b) / 255.0 * a, a);
 }
+vec4 tint(vec4 value, float alpha) { return vec4(value.rgb * alpha, alpha); }
+vec4 themed(vec4 original, vec4 replacement) { return mix(original, replacement, customAccent); }
+vec4 familyColor(vec4 shade, float alpha) { return vec4(shade.rgb * alpha, alpha); }
 vec4 over(vec4 front, vec4 back) { return front + back * (1.0 - front.a); }
 float sd(vec2 p, vec2 size, float radius) {
     vec2 q = abs(p - size * 0.5) - (size * 0.5 - radius);
@@ -104,55 +148,56 @@ void main() {
         fill = linear3(p,148.0,color(11,40,69,1),color(15,45,78,1),color(21,56,90,1),0.42);
         vec4 chosen = linear3(p,148.0,color(13,43,75,1),color(18,50,82,1),color(23,59,96,1),0.55);
         fill = mix(fill,chosen,selected);
-        fill = over(color(19,105,191,0.13*selected) * inset(p,vec2(0),24.0,0.0),fill);
-        fill = over(color(135,193,235,mix(0.24+hovered*0.03,0.0,selected)) * inset(p,vec2(-1),2.0,0.0),fill);
-        vec4 reflection = mix(color(93+8*hovered,161+13*hovered,211+19*hovered,0.34+0.07*hovered),color(77,171,252,0.43),selected);
+        fill = over(themed(familyColor(family1369bf,0.13*selected),tint(accentBase,0.13*selected)) * inset(p,vec2(0),24.0,0.0),fill);
+        fill = over(familyColor(family87c1eb,mix(0.24+hovered*0.03,0.0,selected)) * inset(p,vec2(-1),2.0,0.0),fill);
+        vec4 reflection = mix(familyColor(mix(family5da1d3,family65aee6,hovered),0.34+0.07*hovered),themed(familyColor(family4dabfc,0.43),tint(accentBase,0.43)),selected);
         fill = over(reflection * inset(p,vec2(-7,-8),13.0,-6.0),fill);
         fill = over(color(0,7,24,mix(0.74+hovered*0.05,0.7,selected)) * inset(p,vec2(3,4),7.0,0.0),fill);
         fill = over(color(0,6,20,0.95+0.01*max(selected,hovered)) * inset(p,vec2(8,10),15.0,-5.0),fill);
         vec2 innerSize = surfaceSize - 6.0;
         float innerD = sd(p-3.0,innerSize,19.0);
         float innerMask = 1.0-smoothstep(-aa*0.5,aa*0.5,innerD);
-        fill = over(color(146,202,247,0.07) * (1.0-shadow(p-3.0,innerSize,19.0,vec2(-1),1.0,0.0))*innerMask,fill);
+        fill = over(familyColor(family92caf7,0.07) * (1.0-shadow(p-3.0,innerSize,19.0,vec2(-1),1.0,0.0))*innerMask,fill);
         fill = over(color(0,6,23,0.43) * (1.0-shadow(p-3.0,innerSize,19.0,vec2(1,2),3.0,0.0))*innerMask,fill);
-        border = mix(mix(color(50,92,128,1),color(87,155,208,1),hovered),color(67,182,255,1),selected);
+        border = mix(mix(familyColor(family325c80,1),themed(familyColor(family579bd0,1),accentBase),hovered),themed(familyColor(family43b6ff,1),accentBase),selected);
         line = 1.5;
-        outside = color(135,199,244,0.24) * shadow(p,surfaceSize,cornerRadius,vec2(0,1),0.0,0.0);
-        outside = over(color(43,149,239,0.16*hovered*(1.0-selected))*shadow(p,surfaceSize,cornerRadius,vec2(0),15.0,0.0),outside);
-        outside = over(color(16,145,255,0.3*selected)*shadow(p,surfaceSize,cornerRadius,vec2(0),24.0,0.0),outside);
-        outside = over(color(47,164,247,0.52*selected)*shadow(p,surfaceSize,cornerRadius,vec2(0),0.0,1.0),outside);
+        outside = familyColor(family87c7f4,0.24) * shadow(p,surfaceSize,cornerRadius,vec2(0,1),0.0,0.0);
+        outside = over(themed(familyColor(family2b95ef,0.16*hovered*(1.0-selected)),tint(accentGlow,0.16*hovered*(1.0-selected)))*shadow(p,surfaceSize,cornerRadius,vec2(0),15.0,0.0),outside);
+        outside = over(themed(familyColor(family1091ff,0.3*selected),tint(accentGlow,0.3*selected))*shadow(p,surfaceSize,cornerRadius,vec2(0),24.0,0.0),outside);
+        outside = over(themed(familyColor(family2fa4f7,0.52*selected),tint(accentBase,0.52*selected))*shadow(p,surfaceSize,cornerRadius,vec2(0),0.0,1.0),outside);
     } else if (surfaceKind < 3.5) {
         // .depth-halo: stationary raised circle, never a recessed card.
         float t = clamp(length(p-surfaceSize*vec2(0.4,0.35))/(surfaceSize.x*0.88459*0.7),0.0,1.0);
-        fill = mix(color(28,69,109,1),color(13,35,60,1),t);
-        fill = over(color(118,185,237,0.3333)*inset(p,vec2(0,1),0.0,0.0),fill);
+        vec4 faceTop = mix(color(28,69,109,1),familyColor(family1c456d,1),emblemTintStrength);
+        fill = mix(faceTop,color(13,35,60,1),t);
+        fill = over(familyColor(family76b9ed,0.3333*emblemLightStrength)*inset(p,vec2(0,1),0.0,0.0),fill);
         fill.rgb *= 1.0 + 0.1*hovered;
-        border = mix(color(56,139,208,1),color(85,171,237,1),selected);
-        outside = color(52,91,133,0.4)*shadow(p,surfaceSize,cornerRadius,vec2(-5),14.0,0.0);
+        border = mix(familyColor(family388bd0,1),themed(familyColor(family55abed,1),accentBase),selected);
+        outside = familyColor(family345b85,0.4*emblemLightStrength)*shadow(p,surfaceSize,cornerRadius,vec2(-5),14.0,0.0);
         outside = over(color(3,16,30,1)*shadow(p,surfaceSize,cornerRadius,vec2(7),16.0,0.0),outside);
-        outside = over(color(56,168,255,0.2196*selected)*shadow(p,surfaceSize,cornerRadius,vec2(0),14.0,0.0),outside);
+        outside = over(themed(familyColor(family38a8ff,0.2196*selected),tint(accentGlow,0.2196*selected))*emblemLightStrength*shadow(p,surfaceSize,cornerRadius,vec2(0),14.0,0.0),outside);
     } else if (surfaceKind < 4.5) {
         // .continue: blue raised button with directional drop shadow and rim.
-        fill = linear3(p,180.0,color(46,179,253,1),color(17,135,244,1),color(9,101,209,1),0.57);
+        fill = linear3(p,180.0,themed(familyColor(family2eb3fd,1),accentTop),themed(familyColor(family1187f4,1),accentMiddle),themed(familyColor(family0965d1,1),accentBottom),0.57);
         fill.rgb *= 1.0+0.12*hovered-0.06*pressState;
-        fill = over(color(230,251,255,0.28)*inset(p,vec2(0,2),2.0,0.0),fill);
-        border = color(129,207,255,1);
+        fill = over(familyColor(familye6fbff,0.28)*inset(p,vec2(0,2),2.0,0.0),fill);
+        border = themed(familyColor(family81cfff,1),accentFocus);
         outside = color(0,18,49,0.25)*shadow(p,surfaceSize,cornerRadius,vec2(0,6),13.0,0.0);
-        outside = over(color(16,147,255,0.29)*shadow(p,surfaceSize,cornerRadius,vec2(0),18.0,0.0),outside);
-        outside = over(color(65,167,255,0.22)*shadow(p,surfaceSize,cornerRadius,vec2(0),0.0,1.0),outside);
+        outside = over(themed(familyColor(family1093ff,0.29),tint(accentGlow,0.29))*shadow(p,surfaceSize,cornerRadius,vec2(0),18.0,0.0),outside);
+        outside = over(themed(familyColor(family41a7ff,0.22),tint(accentBase,0.22))*shadow(p,surfaceSize,cornerRadius,vec2(0),0.0,1.0),outside);
         if (unavailableState > 0.5) {
             // Muted raised surface, not a recoloring layer on any SVG artwork.
             fill = linear3(p,180.0,color(66,83,106,1),color(52,68,90,1),color(38,54,75,1),0.57);
-            fill = over(color(230,251,255,0.08)*inset(p,vec2(0,2),2.0,0.0),fill);
+            fill = over(familyColor(familye6fbff,0.08)*inset(p,vec2(0,2),2.0,0.0),fill);
             border = color(98,117,141,1);
             outside = color(0,18,49,0.25)*shadow(p,surfaceSize,cornerRadius,vec2(0,6),13.0,0.0);
         }
     } else {
         // .selected-check, drawn independently over the card well.
-        fill = mix(color(64,186,255,1),color(4,113,236,1),clamp(linearPosition(p,145.0)/0.9,0.0,1.0));
-        fill = over(color(141,213,255,1)*inset(p,vec2(0,1),2.0,0.0),fill);
-        border = color(145,218,255,1);
-        outside = color(20,154,255,0.55)*shadow(p,surfaceSize,cornerRadius,vec2(0),21.0,0.0);
+        fill = mix(themed(familyColor(family40baff,1),accentTop),themed(familyColor(family0471ec,1),accentBottom),clamp(linearPosition(p,145.0)/0.9,0.0,1.0));
+        fill = over(familyColor(family8dd5ff,1)*inset(p,vec2(0,1),2.0,0.0),fill);
+        border = themed(familyColor(family91daff,1),accentFocus);
+        outside = themed(familyColor(family149aff,0.55),tint(accentGlow,0.55))*shadow(p,surfaceSize,cornerRadius,vec2(0),21.0,0.0);
     }
     float inner = 1.0-smoothstep(-aa*0.5,aa*0.5,d+line);
     vec4 surface = over(border*max(mask-inner,0.0),fill*mask);
@@ -171,6 +216,6 @@ void main() {
     // Keyboard focus is a separate outer ring, rather than recoloring the SVG.
     float focusRing = shadow(p,surfaceSize,cornerRadius,vec2(0),0.0,5.0)
                     -shadow(p,surfaceSize,cornerRadius,vec2(0),0.0,3.0);
-    outside = over(color(167,222,255,focusState)*max(focusRing,0.0),outside);
+    outside = over(themed(familyColor(familya7deff,focusState),tint(accentFocus,focusState))*max(focusRing,0.0),outside);
     fragColor = over(surface,outside)*qt_Opacity;
 }

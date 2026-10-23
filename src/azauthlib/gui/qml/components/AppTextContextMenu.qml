@@ -23,7 +23,7 @@ Menu {
     background: Rectangle {
         radius: 11
         color: "#102a43"
-        border.color: "#4387b6"
+        border.color: AccentTheme.color("#4387b6")
         layer.enabled: true
         layer.effect: MultiEffect {
             shadowEnabled: true
@@ -47,26 +47,26 @@ Menu {
             Text {
                 Layout.fillWidth: true
                 text: item.text
-                color: item.enabled ? "#e2eaf3" : "#647e96"
+                color: item.enabled ? "#e2eaf3" : AccentTheme.color("#647e96")
                 font.family: Theme.fontFamily
                 font.pixelSize: 13
             }
             Text {
                 text: item.keyHint
-                color: item.enabled ? "#8fb6d6" : "#536b81"
+                color: item.enabled ? AccentTheme.color("#8fb6d6") : AccentTheme.color("#536b81")
                 font.family: Theme.fontFamily
                 font.pixelSize: 11
             }
         }
         background: Rectangle {
             radius: 6
-            color: item.enabled && item.highlighted ? "#24557b" : "transparent"
-            border.color: item.enabled && item.highlighted ? "#397da9" : "transparent"
+            color: item.enabled && item.highlighted ? AccentTheme.color("#24557b") : "transparent"
+            border.color: item.enabled && item.highlighted ? AccentTheme.color("#397da9") : "transparent"
         }
     }
     component Divider: MenuSeparator {
         padding: 4
-        contentItem: Rectangle { implicitWidth: 218; implicitHeight: 1; color: "#31516e" }
+        contentItem: Rectangle { implicitWidth: 218; implicitHeight: 1; color: AccentTheme.color("#31516e") }
     }
     EditItem {
         text: "Undo"; keyHint: "Ctrl+Z"

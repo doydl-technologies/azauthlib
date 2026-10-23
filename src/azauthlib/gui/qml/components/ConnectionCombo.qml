@@ -32,7 +32,7 @@ ComboBox {
         text: modelData; highlighted: root.highlightedIndex === index
         HoverHandler { cursorShape: Qt.PointingHandCursor }
         contentItem: Text { text: option.text; color: "#edf4ff"; font.family: ConnectionTheme.body; font.pixelSize: 12; verticalAlignment: Text.AlignVCenter }
-        background: Rectangle { radius: 6; color: option.highlighted ? "#24557b" : "transparent" }
+        background: Rectangle { radius: 6; color: option.highlighted ? AccentTheme.color("#24557b") : "transparent" }
     }
     popup: Popup {
         y: root.height + 5; width: root.width; padding: 5
