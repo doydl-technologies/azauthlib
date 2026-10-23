@@ -34,7 +34,9 @@ dependencies = [
   "msal-extensions>=1.2,<2",
   "platformdirs>=4,<5",
   "portalocker>=2.10,<4",
-  "PySide6>=6.8,<7",
+  # 6.12.0 loses None references on Python versions without immortal singletons.
+  "PySide6>=6.8,<7,!=6.12.0; python_version < '3.12'",
+  "PySide6>=6.8,<7; python_version >= '3.12'",
   "python-dotenv>=1.0,<2",
   "requests>=2.32,<3",
   "resvg_py>=0.5,<0.6",
