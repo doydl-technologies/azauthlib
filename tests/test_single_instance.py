@@ -25,10 +25,11 @@ import os
 import subprocess
 import sys
 from pathlib import Path
+from threading import Thread
 from types import SimpleNamespace
 
 import pytest
-from PySide6.QtCore import QMetaObject, QObject, Qt
+from PySide6.QtCore import QMetaObject, QObject, Qt, QThread, Signal
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtQml import QQmlApplicationEngine
 from PySide6.QtQuickControls2 import QQuickStyle
@@ -158,6 +159,37 @@ def test_visibility_callback_ignores_destroyed_engine(qt_app, monkeypatch):
     controller.deleteLater()
     qt_app.processEvents()
     resources.close()
+
+
+def test_first_frame_reveal_runs_on_gui_thread(qt_app):
+    calls = []
+
+    class Window(QObject):
+        frameSwapped = Signal()
+
+        def isVisible(self):
+            calls.append("visible")
+            assert QThread.currentThread() == qt_app.thread()
+            return True
+
+        def setOpacity(self, value):
+            calls.append(("opacity", value))
+
+        def requestActivate(self):
+            calls.append("activate")
+
+    window = Window()
+    reveal = config_app._FirstFrameReveal(window)
+    window.frameSwapped.connect(reveal.reveal, Qt.QueuedConnection)
+    worker = Thread(target=lambda: (window.frameSwapped.emit(), window.frameSwapped.emit()))
+    worker.start()
+    worker.join(timeout=5)
+    assert not worker.is_alive()
+    assert calls == []
+    QTest.qWait(20)
+    assert calls == ["visible", ("opacity", 1), "activate"]
+    window.deleteLater()
+    qt_app.processEvents()
 
 
 def test_ready_home_waits_for_native_reveal_handler(qt_app):

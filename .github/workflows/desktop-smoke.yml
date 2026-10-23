@@ -82,6 +82,13 @@ jobs:
           LIBGL_ALWAYS_SOFTWARE: '1'
           QSG_RHI_BACKEND: opengl
         run: xvfb-run -a -s "-screen 0 1600x1000x24" python .github/desktop/gui_smoke.py --installed ci-artifacts/installed --artifacts ci-artifacts
+      - name: Repeat macOS native navigation checks
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          for attempt in 1 2; do
+            python .github/desktop/gui_smoke.py --installed ci-artifacts/installed --artifacts "ci-artifacts/repeat-${attempt}"
+          done
       - name: Upload distributions and diagnostics
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -95,3 +102,4 @@ jobs:
             ci-artifacts/*.json
             ci-artifacts/*.xml
             ci-artifacts/screenshots/
+            ci-artifacts/repeat-*/

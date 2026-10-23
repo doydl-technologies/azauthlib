@@ -1576,6 +1576,31 @@ class StartupBootstrap(QObject):
         platform_integration.activate_window(target)
 
 
+class _FirstFrameReveal(QObject):
+    """Apply the first presented frame's window changes on the GUI thread."""
+
+    def __init__(self, window):
+        super().__init__(window)
+        self._window = window
+        self._seen = False
+
+    @Slot()
+    def reveal(self):
+        if self._seen:
+            return  # More than one frame signal can already be queued.
+        self._seen = True
+        window = self._window
+        window.frameSwapped.disconnect(self.reveal)
+        if window.isVisible():
+            # Keep the native frame transparent until Qt has painted it;
+            # otherwise Windows can briefly show a white unpainted window.
+            window.setOpacity(1)
+            active_splash = window.property("startupSplash")
+            if isinstance(active_splash, QQuickWindow):
+                active_splash.hide()
+            window.requestActivate()
+
+
 def load_configuration_qml(
     engine: QQmlApplicationEngine,
     resources: PackageResources,
@@ -1633,22 +1658,7 @@ def load_configuration_qml(
         # fallback. The separate title-bar override only replaces ICON_SMALL.
         window.setIcon(app.windowIcon())
 
-        first_frame_seen = False
-
-        def first_main_frame():
-            nonlocal first_frame_seen
-            if first_frame_seen:
-                return  # More than one frame signal can already be queued.
-            first_frame_seen = True
-            window.frameSwapped.disconnect(first_main_frame)
-            if window.isVisible():
-                # Keep the native frame transparent until Qt has painted it;
-                # otherwise Windows can briefly show a white unpainted window.
-                window.setOpacity(1)
-                active_splash = window.property("startupSplash")
-                if isinstance(active_splash, QQuickWindow):
-                    active_splash.hide()
-                window.requestActivate()
+        first_frame_reveal = _FirstFrameReveal(window)
 
         def reveal_main():
             screen = (
@@ -1660,7 +1670,8 @@ def load_configuration_qml(
                 window.setScreen(screen)
             center_window_on_screen(window, screen)
             configure_window_taskbar_identity(window, resources)
-            window.frameSwapped.connect(first_main_frame)
+            # frameSwapped originates on the render thread with threaded backends.
+            window.frameSwapped.connect(first_frame_reveal.reveal, Qt.QueuedConnection)
             window.show()
             # Account for any final frame adjustment by the window manager.
             center_window_on_screen(window, screen)
