@@ -31,7 +31,7 @@ Item {
         anchors.fill: parent
         radius: root.visualStyle.radius
         sunken: true; recessedFill: true; depth: 2; blur: 5
-        lightOffset: Qt.point(-2, -2); lightBlur: 4; lightColor: "#5a345b85"
+        lightOffset: Qt.point(-2, -2); lightBlur: 4; lightColor: AccentTheme.color("#5a345b85")
         borderColor: root.controlInvalid ? "#ff889e" : root.controlEnabled ? root.visualStyle.border : root.visualStyle.disabledBorder
         borderWidth: root.visualStyle.borderWidth
     }

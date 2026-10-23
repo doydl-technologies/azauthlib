@@ -39,6 +39,11 @@ import pytest
         "assets/icons/svg/.docs/guide.md",
         "assets/icons/svg/.scripts/utility.py",
         "assets/icons/svg/third-party/reference.svg",
+        "assets/icons/svg/third-party/profile-avatar/.dormant/old.svg",
+        "gui/preview_add_connection_animation.py",
+        "gui/qml/AddConnectionAnimationPreview.qml",
+        "gui/qml/ConnectionAnimationSimulation.qml",
+        "gui/qml/components/ConnectionAnimationInspector.qml",
     ],
 )
 def test_local_only_files_are_excluded(relative):
@@ -50,8 +55,11 @@ def test_local_only_files_are_excluded(relative):
     [
         "assets/logo/svg/mark.svg",
         "assets/logo/third-party/graph.svg",
+        "assets/logo/svg/third-party/.TERMS-OF-USE.md",
         "gui/platform_integration.py",
         "assets/docs/legal/PRIVACY.html",
+        "assets/icons/svg/third-party/profile-avatar/app-services.svg",
+        "assets/icons/svg/third-party/profile-avatar/.TERMS-OF-USE.md",
     ],
 )
 def test_runtime_files_are_not_excluded(relative):
@@ -114,6 +122,21 @@ def test_archive_check_rejects_excluded_files(tmp_path):
 def test_archive_check_detects_case_sensitive_qml_resource_failures(tmp_path):
     with pytest.raises(ValueError, match="case-mismatched QML resource"):
         ci_prepare.verify_archives(*archives(tmp_path, reference="Mark.svg"))
+
+
+def test_archive_check_requires_avatar_attribution_in_both_distributions(tmp_path):
+    root, wheel, sdist = archives(tmp_path)
+    terms = root / "src/azauthlib" / ci_prepare.AVATAR_DIRECTORY / ".TERMS-OF-USE.md"
+    terms.parent.mkdir(parents=True)
+    terms.write_text("Third-party attribution", encoding="utf-8")
+    with pytest.raises(ValueError, match="wheel missing runtime files"):
+        ci_prepare.verify_archives(root, wheel, sdist)
+    with ZipFile(wheel, "a") as archive:
+        archive.writestr(
+            "azauthlib/" + ci_prepare.AVATAR_DIRECTORY + terms.name, terms.read_bytes()
+        )
+    with pytest.raises(ValueError, match="sdist missing runtime files"):
+        ci_prepare.verify_archives(root, wheel, sdist)
 
 
 def test_prepare_refuses_to_overwrite_an_existing_install(tmp_path, monkeypatch):

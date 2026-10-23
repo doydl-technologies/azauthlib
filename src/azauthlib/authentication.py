@@ -34,6 +34,7 @@ from dotenv import dotenv_values
 from msal import ConfidentialClientApplication, PublicClientApplication
 
 from ._configure import get_settings
+from .certificates import import_certificate
 from .credentials import load_credentials
 from .permissions import application_scope_fmt, scope_fmt
 from .tokens import load_token_cache, resolve_token_path, tokentime_fmt
@@ -74,12 +75,41 @@ class _CredentialBuilder:
         credentials = load_credentials(self.auth.default_env_path)
         if authority:
             credentials["authority"] = authority
-        return self.WithEntry(
+        result = self.WithEntry(
             client_id=credentials["client_id"],
             tenant_id=credentials["tenant_id"],
             client_secret=credentials.get("client_secret"),
             authority=credentials.get("authority"),
         )
+        if credentials.get("auth_method") == "client_certificate":
+            self.auth.certificate = credentials.get("certificate")
+            self.auth._certificate_password = credentials.get("certificate_password")
+            if not self.auth.certificate:
+                raise ValueError("The selected profile has no certificate configuration")
+        return result
+
+    def WithCertificate(
+        self,
+        client_id,
+        tenant_id,
+        key_path,
+        *,
+        certificate_path=None,
+        password=None,
+        format="pfx",
+        authority=None,
+    ):
+        """Configure local PFX/P12 or PEM files; never persist the password here."""
+        self.WithEntry(client_id, tenant_id, authority=authority)
+        spec = {
+            "format": format,
+            "key_path": os.fspath(key_path),
+            "certificate_path": os.fspath(certificate_path) if certificate_path else "",
+        }
+        imported = import_certificate(spec, password)
+        self.auth.certificate = imported.public
+        self.auth._certificate_password = password
+        return self.auth
 
     def WithEntry(self, client_id, tenant_id, client_secret=None, authority=None):
         if not client_id or not tenant_id:
@@ -97,6 +127,8 @@ class _CredentialBuilder:
         self.auth.client_id = str(client_id).strip()
         self.auth.tenant_id = str(tenant_id).strip()
         self.auth.client_secret = client_secret
+        self.auth.certificate = None
+        self.auth._certificate_password = None
         self.auth.authority = (
             authority or f"https://login.microsoftonline.com/{self.auth.tenant_id}"
         )
@@ -160,6 +192,8 @@ class Authentication:
         self.client_id: str | None = None
         self.tenant_id: str | None = None
         self.client_secret: str | None = None
+        self.certificate: dict | None = None
+        self._certificate_password: str | None = None
         self.authority: str | None = None
         self.default_env_path = str(settings.env_path)
         self.default_token_path = str(settings.token_path)
@@ -188,8 +222,10 @@ class Authentication:
     def _require_configuration(self, *, confidential: bool = False) -> None:
         if not self.client_id or not self.authority:
             raise ValueError("Configure client_id and tenant_id/authority before authentication")
-        if confidential and not self.client_secret:
-            raise ValueError("Client credentials authentication requires a client secret")
+        if confidential and not self.client_secret and not self.certificate:
+            raise ValueError(
+                "Client credentials authentication requires a client secret or certificate"
+            )
 
     def _public_app(self) -> PublicClientApplication:
         self._require_configuration()
@@ -270,13 +306,19 @@ class Authentication:
 
     def ClientCredentials(self, scopes=None):
         self._require_configuration(confidential=True)
+        if self.certificate and self.tenant_id in ("common", "organizations", "consumers"):
+            raise ValueError("Certificate authentication requires a specific tenant UUID or domain")
         requested = (
             scopes if scopes is not None else (self.scopes if self._scopes_explicit else None)
         )
         app = ConfidentialClientApplication(
             client_id=self.client_id,
             authority=self.authority,
-            client_credential=self.client_secret,
+            client_credential=(
+                import_certificate(self.certificate, self._certificate_password).credential
+                if self.certificate
+                else self.client_secret
+            ),
             token_cache=self._cache(),
         )
         result = app.acquire_token_for_client(scopes=application_scope_fmt(requested))

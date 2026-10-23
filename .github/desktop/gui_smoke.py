@@ -259,19 +259,23 @@ def run_checks(installed, artifacts, report):
                             and main.opacity() == 1
                             and main.property("startupRevealed")
                             and home.property("ready")
-                            and connections_page.property("opened")
                             and not main.property("navigationLocked")
                         ),
                         "installed GUI startup",
                     )
                     require(main.property("startupSplash") is None, "Splash unexpectedly created")
                     require(home.property("loadedLogoCount") == 6, "Some provider logos failed")
+                    require(
+                        controller.connectionsDeferred and not connections_page.property("opened"),
+                        "Connections should load only after a service is opened",
+                    )
                     require(not main.icon().isNull(), "Application icon missing")
                     check_windows_identity(main)
                     report["checks"].extend(
                         [
                             "installed-wheel startup",
                             "six original provider logos",
+                            "deferred Connections startup",
                             "application icon",
                         ]
                     )
@@ -328,6 +332,8 @@ def run_checks(installed, artifacts, report):
                     wait_for(
                         lambda: (
                             main.property("currentPage") == "connections"
+                            and connections_page.property("opened")
+                            and controller.connectionsReady
                             and not main.property("navigationLocked")
                         ),
                         "Connections navigation",

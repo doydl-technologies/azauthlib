@@ -1,0 +1,42 @@
+<svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="136"
+    height="136"
+    viewBox="0 0 24 24"
+    fill="none"
+    class="lucide lucide-circle-plus preview-icon"
+>
+    <!-- =================================
+         icon-stroke-width: 1.25
+         icon-stroke-width: 2.25
+         icon-stroke-width: 3
+        ================================= -->
+
+    <style>
+        svg {
+            /* Stroke settings */
+            --icon-stroke-width: 2.25;
+            --icon-stroke-color: #38a8ff;
+
+            /* Stroke appearance */
+            --icon-linecap: round;
+            --icon-linejoin: round;
+        }
+
+        .icon-shape {
+            stroke: var(--icon-stroke-color);
+            stroke-width: var(--icon-stroke-width);
+            stroke-linecap: var(--icon-linecap);
+            stroke-linejoin: var(--icon-linejoin);
+        }
+    </style>
+
+    <!-- Outer circle -->
+    <circle class="icon-shape" cx="12" cy="12" r="10" />
+
+    <!-- Horizontal plus line -->
+    <path class="icon-shape" d="M8 12h8" />
+
+    <!-- Vertical plus line -->
+    <path class="icon-shape" d="M12 8v8" />
+</svg>

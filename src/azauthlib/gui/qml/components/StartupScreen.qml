@@ -129,7 +129,9 @@ Item {
                 anchors.bottomMargin: root.logoMarkGap
                 width: root.logoMarkWidth
                 height: root.logoMarkHeight                
-                source: "../../../assets/logo/svg/azauthlib-mark-glow-border.svg"                
+                source: AccentTheme.customAccent ? AccentTheme.artwork("azauthlib-mark-glow-border.svg") :
+                    "../../../assets/logo/svg/azauthlib-mark-glow-border.svg"
+                sourceSize: Qt.size(880, 1042)
                 fillMode: Image.PreserveAspectFit
                 smooth: true
                 mipmap: true
@@ -176,7 +178,7 @@ Item {
                 objectName: "startupProgressFill"
                 width: parent.width * Math.max(0, Math.min(100, root.progress)) / 100
                 height: parent.height; radius: 3
-                color: Theme.accent
+                color: AccentTheme.color("#1684f5")
             }
         }
         Row {
@@ -217,7 +219,9 @@ Item {
         anchors.bottom: disclaimer.top
         anchors.bottomMargin: -4
         // Use the SVG's own width and height, without extra effects.
-        source: "../../../assets/controls/glowing-blue-divider.svg"
+        source: AccentTheme.customAccent ? AccentTheme.artwork("glowing-blue-divider.svg") :
+            "../../../assets/controls/glowing-blue-divider.svg"
+        sourceSize: Qt.size(1300, 32)
         fillMode: Image.PreserveAspectFit
         smooth: true
         mipmap: true

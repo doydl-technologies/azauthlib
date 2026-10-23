@@ -1,4 +1,6 @@
 singleton Theme 1.0 Theme.qml
+singleton AccentTheme 1.0 AccentTheme.qml
+singleton ServiceSelectionTheme 1.0 ServiceSelectionTheme.qml
 singleton ConnectionTheme 1.0 ConnectionTheme.qml
 singleton FormTheme 1.0 FormTheme.qml
 FormThemeDefinition 1.0 FormThemeDefinition.qml

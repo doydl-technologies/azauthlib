@@ -1,5 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import "../theme"
 import QtQuick.Controls
 import QtQuick.Effects
 
@@ -80,7 +81,7 @@ Button {
             // QML colors use #AARRGGBB; the tint stays translucent at rest.
             color: root.enabled && root.down ? "#d006111c" : "#b306111c"
             border.width: root.enabled && root.visualFocus ? 1 : 0
-            border.color: "#67caff"
+            border.color: AccentTheme.color("#67caff")
             Behavior on color { ColorAnimation { duration: 120 } }
         }
     }

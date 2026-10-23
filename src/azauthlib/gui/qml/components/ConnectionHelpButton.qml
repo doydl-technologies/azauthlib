@@ -3,12 +3,16 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.VectorImage
 import QtQuick.Effects
+import "../theme"
 
 Button {
     id: root
     property bool expanded: false
+    property string accentFamily: AccentTheme.preset
+    visible: AccentTheme.showInfoButtons
     readonly property bool sunken: down || expanded
-    enabled: !expanded
+    enabled: !expanded && AccentTheme.showInfoButtons
+    focusPolicy: visible && enabled ? Qt.StrongFocus : Qt.NoFocus
     opacity: enabled ? 1 : 0.4
     width: 21; height: 21
     implicitWidth: 21; implicitHeight: 21
@@ -34,9 +38,11 @@ Button {
             width: root.width + 5
             height: root.height + 5
 
-            source: root.sunken
+            source: root.accentFamily !== "blue" ? AccentTheme.artwork(root.sunken ?
+                "surface-head-icon--sunken-circle.png" : "surface-head-icon--raised-circle.png", root.accentFamily) : root.sunken
                 ? Qt.resolvedUrl("../../../assets/controls/surface-head-icon--sunken-circle.png")
                 : Qt.resolvedUrl("../../../assets/controls/surface-head-icon--raised-circle.png")
+            sourceSize: root.sunken ? Qt.size(66, 66) : Qt.size(69, 70)
             fillMode: Image.PreserveAspectFit
             smooth: true
             mipmap: true
@@ -67,6 +73,6 @@ Button {
         radius: 4
         color: "transparent"
         border.width: root.enabled && root.visualFocus ? 1 : 0
-        border.color: "#38a8ff"
+        border.color: AccentTheme.paletteFor(root.accentFamily).accent
     }
 }

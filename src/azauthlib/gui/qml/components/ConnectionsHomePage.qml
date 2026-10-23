@@ -14,7 +14,13 @@ Control {
     readonly property bool homePage: true
     property bool editorDirty: false
     property bool preparing: false
+    property bool awaitingData: false
+    property bool backgroundPreparation: false
+    property bool publicStateOnly: false
+    property real loadProgress: 0
+    property string loadMessage: ""
     property bool loadFailed: false
+    property bool externalModalOpen: false
     readonly property bool opened: contentLoader.status === Loader.Ready && !preparing
     readonly property bool creationFocused: manager.creatingConnection
     readonly property bool editingFocused: manager.editing
@@ -23,7 +29,7 @@ Control {
     readonly property int zoomPercent: appController.zoomPercent
     readonly property real baseScale: Math.max(1, Math.min(width / 970, height / 609))
     readonly property real contentScale: Math.min(baseScale, ConnectionTheme.maximumContentScale) * zoomPercent / 100
-    readonly property bool interactionEnabled: enabled && visible && opened && panel && !manager.testing && !panel.zoomBlocked && !leaveTestDialog.visible
+    readonly property bool interactionEnabled: enabled && visible && opened && panel && !manager.testing && !panel.zoomBlocked && !leaveTestDialog.visible && !externalModalOpen
     readonly property bool canNavigateHome: enabled && visible && !manager.testing && !editingFocused && !contentTransitionBusy && !leaveTestDialog.visible &&
         (!panel || !panel.zoomBlocked)
     readonly property bool zoomEnabled: interactionEnabled && !editingFocused && !contentTransitionBusy && !appController.zoomLocked
@@ -42,7 +48,7 @@ Control {
         openTopic("about", trigger)
     }
     function openTopic(topic, trigger) {
-        if (manager.testing || editingFocused || contentTransitionBusy) return
+        if (manager.testing || editingFocused || contentTransitionBusy || externalModalOpen) return
         if (opened && panel && !panel.zoomBlocked) panel.toggleHelp(topic, trigger)
     }
 
@@ -126,16 +132,65 @@ Control {
         function onActiveFocusItemChanged() { Qt.callLater(root.ensureFocusedItemVisible) }
     }
     function openManager() {
-        if (preparing || opened) return
+        if (backgroundPreparation) {
+            // Supersede a running public-only worker with the normal foreground
+            // refresh; the controller generation guard rejects late results.
+            backgroundPreparation = false
+            preparing = true
+            awaitingData = true
+            appController.prepareConnections()
+            return
+        }
+        if (preparing || (opened && !publicStateOnly)) return
         loadFailed = false
         preparing = true
-        manager.prepareForOpen()
+        if (!appController.connectionsReady || publicStateOnly) {
+            awaitingData = true
+            appController.prepareConnections()
+        } else {
+            loadProgress = 90
+            manager.prepareForOpen()
+        }
+    }
+    function prepareInBackground() {
+        if (preparing || opened || !appController.canWarmVisitedService ||
+                manager.editing || manager.testing) return
+        backgroundPreparation = true
+        publicStateOnly = true
+        preparing = true
+        awaitingData = true
+        loadFailed = false
+        appController.prepareVisitedService()
+    }
+    function discardBackgroundPreparation() {
+        if (!backgroundPreparation && !publicStateOnly) return
+        backgroundPreparation = false
+        publicStateOnly = false
+        preparing = false
+        awaitingData = false
+        contentLoader.active = false
+        loadFailed = false
+        appController.discardBackgroundConnections()
+    }
+    function cancelPreparation() {
+        if (opened) return
+        backgroundPreparation = false
+        awaitingData = false
+        preparing = false
+        contentLoader.active = false
+        loadFailed = false
+        loadProgress = 0
+        appController.cancelConnectionPreparation()
     }
     function failPreparation() {
+        const quiet = backgroundPreparation
         contentLoader.active = false
         preparing = false
+        awaitingData = false
+        backgroundPreparation = false
+        if (!quiet) publicStateOnly = false
         loadFailed = true
-        preparationFailed("Check your saved connection files and secure storage, then choose Retry.")
+        if (!quiet) preparationFailed("Check your saved connection files and secure storage, then choose Retry.")
     }
     function requestClose() {
         if (panel) panel.requestClose()
@@ -158,7 +213,30 @@ Control {
         if (panel) panel.cleanup()
         else manager.cancelTest()
     }
-    Component.onCompleted: openManager()
+    // Diagnostic/eager controllers open directly; production defers content
+    // loading until a service is chosen.
+    Component.onCompleted: if (!appController.connectionsDeferred) openManager()
+    Connections {
+        target: root.appController
+        function onStartupPreferencesChanged() {
+            if (!root.appController.startupPreferences.warm_start)
+                root.discardBackgroundPreparation()
+        }
+        function onProviderChanged() {
+            if (root.providerId !== "graph") root.discardBackgroundPreparation()
+        }
+        function onConnectionPreparationChanged() {
+            if (!root.preparing || !root.awaitingData) return
+            root.loadProgress = root.appController.connectionLoadProgress
+            root.loadMessage = root.appController.connectionLoadMessage
+            if (root.appController.connectionsError.length > 0) root.failPreparation()
+            else if (root.appController.connectionsReady) {
+                root.awaitingData = false
+                if (!root.backgroundPreparation) root.publicStateOnly = false
+                root.manager.prepareForOpen()
+            }
+        }
+    }
     ConnectionConfirmDialog {
         id: leaveTestDialog
         objectName: "connectionsLeaveTestDialog"
@@ -173,8 +251,14 @@ Control {
         function onOpeningPrepared(success) {
             if (!root.preparing) return
             if (success) {
-                root.startupProgressChanged(92, "Connection data ready; preparing the interface and About drawer…")
-                contentLoader.active = true
+                if (root.awaitingData) return // A foreground refresh superseded public preparation.
+                root.loadProgress = 94
+                root.loadMessage = "Composing the render graph…"
+                root.startupProgressChanged(94, root.loadMessage)
+                if (contentLoader.status === Loader.Ready) {
+                    root.preparing = false
+                    root.backgroundPreparation = false
+                } else contentLoader.active = true
             }
             else root.failPreparation()
         }
@@ -197,14 +281,16 @@ Control {
             ScrollBar.vertical: ScrollBar {
                 objectName: "connectionsZoomVerticalBar"
                 parent: zoomScroll
-                x: zoomScroll.width - width - 5; y: 24
+                x: zoomScroll.width - width - 2; y: 24
+                width: ConnectionTheme.scrollBarWidth
                 height: zoomScroll.height - 48
                 policy: zoomViewport.contentHeight > zoomViewport.height + 1 ? ScrollBar.AlwaysOn : ScrollBar.AlwaysOff
             }
             ScrollBar.horizontal: ScrollBar {
                 objectName: "connectionsZoomHorizontalBar"
                 parent: zoomScroll
-                x: 24; y: zoomScroll.height - height - 5
+                x: 24; y: zoomScroll.height - height - 2
+                height: ConnectionTheme.scrollBarWidth
                 width: zoomScroll.width - 48
                 policy: zoomViewport.contentWidth > zoomViewport.width + 1 ? ScrollBar.AlwaysOn : ScrollBar.AlwaysOff
             }
@@ -227,8 +313,15 @@ Control {
                     scale: root.contentScale; transformOrigin: Item.TopLeft
                     active: false; asynchronous: true
                     opacity: status === Loader.Ready ? 1 : 0
-                    Behavior on opacity { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
-                    onLoaded: root.preparing = false
+                    Behavior on opacity { NumberAnimation { duration: ConnectionTheme.reducedMotion ? 0 : 220; easing.type: Easing.OutCubic } }
+                    onLoaded: {
+                        root.loadProgress = 100
+                        root.loadMessage = "Runtime context synchronized"
+                        if (!root.awaitingData) {
+                            root.preparing = false
+                            root.backgroundPreparation = false
+                        }
+                    }
                     onStatusChanged: if (status === Loader.Error) root.failPreparation()
                     sourceComponent: ConnectionManagerContent {
                         objectName: "connectionsHomeContent"

@@ -1,0 +1,3 @@
+# Normalize vector artwork and notices without changing their rendered content.
+*.svg text eol=lf
+*.md text eol=lf

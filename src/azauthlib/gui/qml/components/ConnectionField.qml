@@ -34,6 +34,10 @@ Item {
     function dismissHelp() { if (helpPopup) helpPopup.close() }
     function dismissInteractions() { fieldContextMenu.close(); dismissHelp() }
     function focusInput() { input.forceActiveFocus() }
+    Connections {
+        target: AccentTheme
+        function onShowInfoButtonsChanged() { if (!AccentTheme.showInfoButtons) root.dismissHelp() }
+    }
     opacity: (enabled || transitionBusy ? 1 : 0.45) * presenceOpacity
     transform: Translate { y: root.presenceOffset }
     onEnabledChanged: if (!enabled) dismissInteractions()
@@ -48,7 +52,7 @@ Item {
         ConnectionHelpButton {
             id: info
             objectName: root.objectName + "InfoButton"
-            visible: root.helpTopic.length > 0 || root.infoDescription.length > 0
+            visible: AccentTheme.showInfoButtons && (root.helpTopic.length > 0 || root.infoDescription.length > 0)
             text: "About " + root.label
             expanded: root.helpExpanded
             opacity: (enabled || root.transitionBusy) && !expanded ? 1 : 0.4
@@ -84,7 +88,7 @@ Item {
             font.family: ConnectionTheme.body; font.pixelSize: 12; font.weight: Font.DemiBold
             color: readOnly ? "#b9d3e9" : "#edf4ff"
             placeholderTextColor: "#809bb2ce"
-            selectionColor: "#196fd3"; selectedTextColor: "white"
+            selectionColor: AccentTheme.color("#196fd3"); selectedTextColor: "white"
             selectByMouse: true; hoverEnabled: true
             echoMode: root.password && !root.passwordVisible ? TextInput.Password : TextInput.Normal
             inputMethodHints: root.password ? Qt.ImhSensitiveData | Qt.ImhNoPredictiveText | Qt.ImhNoAutoUppercase : Qt.ImhNoPredictiveText | Qt.ImhNoAutoUppercase
@@ -146,9 +150,9 @@ Item {
         visible: root.password && !input.readOnly
         anchors.right: parent.right; anchors.rightMargin: 8; anchors.verticalCenter: transitionText.verticalCenter
         width: 24; height: 24; padding: 4; hoverEnabled: true
-        Accessible.name: root.passwordVisible ? "Hide client secret" : "Show client secret"
+        Accessible.name: (root.passwordVisible ? "Hide " : "Show ") + root.label.toLowerCase()
         contentItem: ConnectionIcon { name: root.passwordVisible ? "eyeOff" : "eye" }
-        background: Rectangle { radius: 5; color: eye.hovered ? "#244c70" : "transparent"; border.color: eye.visualFocus ? "#38a8ff" : "transparent" }
+        background: Rectangle { radius: 5; color: eye.hovered ? AccentTheme.color("#244c70") : "transparent"; border.color: eye.visualFocus ? AccentTheme.accent : "transparent" }
         HoverHandler { cursorShape: Qt.PointingHandCursor }
         onClicked: root.passwordVisible = !root.passwordVisible
     }

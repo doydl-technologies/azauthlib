@@ -91,6 +91,17 @@ Button {
         readonly property real haloRotation: root.haloAngle + root.loadingRotation
         readonly property real haloOpacity: root.haloStrength
         readonly property real focused: root.enabled && root.visualFocus ? 1 : 0
+        readonly property color family8cdaff: AccentTheme.color("#8cdaff")
+        readonly property color family168ee3: AccentTheme.color("#168ee3")
+        readonly property color family3eaff3: AccentTheme.color("#3eaff3")
+        readonly property color family7ad6ff: AccentTheme.color("#7ad6ff")
+        readonly property color family5e93b9: AccentTheme.color("#5e93b9")
+        readonly property color family3b6589: AccentTheme.color("#3b6589")
+        readonly property color family4d9aca: AccentTheme.color("#4d9aca")
+        readonly property color family477ca2: AccentTheme.color("#477ca2")
+        readonly property color family0a5481: AccentTheme.color("#0a5481")
+        readonly property color family356689: AccentTheme.color("#356689")
+        readonly property color family1f4767: AccentTheme.color("#1f4767")
         fragmentShader: Qt.resolvedUrl("../shaders/connections-halo.frag.qsb")
     }
 }

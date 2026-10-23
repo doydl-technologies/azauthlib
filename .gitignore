@@ -39,8 +39,11 @@ scripts/
 /src/azauthlib/assets/icons/svg/.docs/
 /src/azauthlib/assets/icons/svg/.dormant/
 /src/azauthlib/assets/icons/svg/.scripts/
-/src/azauthlib/assets/icons/svg/third-party/
+/src/azauthlib/assets/icons/svg/third-party/*
+!/src/azauthlib/assets/icons/svg/third-party/profile-avatar/
+/src/azauthlib/assets/icons/svg/third-party/profile-avatar/.dormant/
 /src/azauthlib/assets/themes/.dormant/
 /src/azauthlib/assets/logo/third-party/.dormant/
 /src/azauthlib/assets/logo/png/.dormant/
 /src/azauthlib/assets/logo/svg/.dormant/
+/_run.cmd

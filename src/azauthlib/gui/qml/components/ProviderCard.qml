@@ -14,6 +14,23 @@ Button {
     property real logoSize: 66
     property bool selected: false
     signal logoSettled(string providerId, bool success)
+    function spotlightSubject(mode, target) {
+        const item = mode === "mark" ? emblem.logoItem : emblem
+        const origin = item.mapToItem(target, 0, 0)
+        const end = item.mapToItem(target, item.width, item.height)
+        const unit = (end.x - origin.x) / item.width
+        const groupWidth = Math.max(emblem.width, serviceName.implicitWidth) * unit
+        return {
+            x: mode === "group" ? origin.x + (end.x - origin.x - groupWidth) / 2 : origin.x,
+            y: origin.y,
+            width: mode === "group" ? groupWidth : end.x - origin.x,
+            height: mode === "group" ? (emblem.height + 11 + serviceName.height) * unit : end.y - origin.y,
+            unit: unit, circleSize: emblem.width * unit, logoSize: root.logoSize,
+            labelGap: 11 * unit, labelHeight: serviceName.height * unit,
+            fontSize: serviceName.font.pixelSize * unit,
+            name: root.providerName, logo: root.logoSource.toString().split("/").pop()
+        }
+    }
     padding: 0
     hoverEnabled: enabled
     focusPolicy: Qt.StrongFocus
@@ -35,45 +52,20 @@ Button {
             y: (parent.height - height) / 2 + 1
             width: parent.width - 36
             spacing: 0
-            ProviderSurface {
+            ProviderEmblem {
+                id: emblem
                 objectName: root.objectName + "Halo"
                 anchors.horizontalCenter: parent.horizontalCenter
                 width: 108; height: 108; radius: 54; kind: 3
                 selected: root.selected; hovered: root.hovered
-                SvgImageShadow {
-                    objectName: root.objectName + "LogoShadow"
-                    source: originalLogo
-                }
-                Image {
-                    id: originalLogo
-                    objectName: root.objectName + "Logo"
-                    // Preserve the original source URL for inspection; the
-                    // provider renders that exact SVG with mask/filter support.
-                    readonly property url originalSvgSource: root.logoSource
-                    readonly property int renderEdge: Math.max(384,
-                        Math.ceil(root.logoSize * Screen.devicePixelRatio * 4))
-                    anchors.centerIn: parent
-                    width: root.logoSize; height: root.logoSize
-                    source: "image://providerlogos/" + root.logoSource.toString().split("/").pop()
-                    sourceSize: Qt.size(renderEdge, renderEdge)
-                    fillMode: Image.PreserveAspectFit
-                    asynchronous: true
-                    retainWhileLoading: true
-                    smooth: true; mipmap: true
-                    onStatusChanged: {
-                        if (status === Image.Ready || status === Image.Error)
-                            root.logoSettled(root.providerId, status === Image.Ready)
-                    }
-                    Component.onCompleted: {
-                        if (status === Image.Ready || status === Image.Error)
-                            root.logoSettled(root.providerId, status === Image.Ready)
-                    }
-                    // No effect layer on the foreground: the separate shadow
-                    // samples this texture and cannot blur or tint its colors.
-                }
+                providerObjectName: root.objectName
+                logoSource: root.logoSource
+                logoSize: root.logoSize
+                onLogoSettled: success => root.logoSettled(root.providerId, success)
             }
             Item { width: 1; height: 11 }
             Text {
+                id: serviceName
                 objectName: root.objectName + "Name"
                 width: parent.width; height: 27.6
                 text: root.providerName; color: "#f3f7ff"
@@ -87,7 +79,7 @@ Button {
                 objectName: root.objectName + "Summary"
                 anchors.horizontalCenter: parent.horizontalCenter
                 width: Math.min(345, parent.width); height: 48.67
-                text: root.summary; color: "#99b7d8"
+                text: root.summary; color: AccentTheme.color("#99b7d8")
                 horizontalAlignment: Text.AlignHCenter; wrapMode: Text.WordWrap
                 font.family: ConnectionTheme.body; font.pointSize: 11.775; font.weight: Font.Normal
                 lineHeightMode: Text.FixedHeight; lineHeight: 24.335

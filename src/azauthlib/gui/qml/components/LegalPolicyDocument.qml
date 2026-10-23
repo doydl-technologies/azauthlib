@@ -15,7 +15,7 @@ TextEdit {
     selectByMouse: true
     DrawerLinkCursor { textItem: root }
     color: "#c8daed"
-    selectionColor: "#345b85"
+    selectionColor: AccentTheme.color("#345b85")
     selectedTextColor: "#edf4ff"
     font.family: ConnectionTheme.body
     font.pixelSize: 10

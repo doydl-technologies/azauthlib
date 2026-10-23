@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-4 -4 520 520" role="img" aria-label="Adjustable horizontal settings icon">
+  <title>Horizontal settings sliders</title>
+  <style>
+    :root { --icon-color: #FFFFFF; --icon-weight: 28px; }
+    .icon { fill: none; stroke: var(--icon-color); stroke-width: var(--icon-weight); stroke-linecap: round; stroke-linejoin: round; }
+  </style>
+  <g class="icon">
+    <path d="M 12 76.8 H 116"/><path d="M 242 76.8 H 500"/><path d="M 12 256 H 322"/><path d="M 446 256 H 500"/><path d="M 12 435.2 H 65"/><path d="M 191 435.2 H 500"/>
+    <circle cx="179.2" cy="76.8" r="48"/><circle cx="384" cy="256" r="48"/><circle cx="128" cy="435.2" r="48"/>
+  </g>
+</svg>

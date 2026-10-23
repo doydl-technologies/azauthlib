@@ -27,7 +27,7 @@ Button {
     contentItem: Text {
         id: label
         text: root.text
-        color: root.active ? "#6891b5" : root.enabled && (root.hovered || root.down) ? "#bfe5ff" : root.linkColor
+        color: root.active ? AccentTheme.color("#6891b5") : root.enabled && (root.hovered || root.down) ? "#bfe5ff" : root.linkColor
         font: root.font
         horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter
         style: Text.Raised; styleColor: "#03101e"

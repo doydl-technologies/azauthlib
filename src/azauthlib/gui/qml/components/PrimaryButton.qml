@@ -20,7 +20,7 @@ Button {
     readonly property color effectiveBorder: visualStyle ? visualStyle.border : Theme.accentBorder
     readonly property color effectiveFocusBorder: visualStyle ? visualStyle.focusBorder : Theme.focus
     readonly property color effectiveGlow: visualStyle ? visualStyle.glow : Theme.accentGlow
-    readonly property color effectiveHighlight: visualStyle ? visualStyle.highlight : "#d5f3ff"
+    readonly property color effectiveHighlight: visualStyle ? visualStyle.highlight : AccentTheme.color("#d5f3ff")
 
     implicitWidth: 180
     implicitHeight: 44

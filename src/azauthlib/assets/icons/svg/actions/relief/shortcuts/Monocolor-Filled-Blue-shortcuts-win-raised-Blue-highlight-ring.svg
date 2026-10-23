@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120" role="img" aria-label="Windows shortcut — raised neumorphic button">
+<title>Windows shortcut — raised state — lifted hover with highlighted blue ring</title>
+<desc>Editable vector artwork with a dropped lower-right hover shadow, a raised sidewall, and distinct electric-blue hover ring for azauthlib dark navy UI. Transparent external background, state-specific bevels and lighting, original icon geometry preserved.</desc>
+<defs>
+  <!-- The gradients are fully editable and render without image assets. -->
+  <radialGradient id="ambient" cx="50%" cy="50%" r="50%">
+    <stop offset="0" stop-color="#000913" stop-opacity=".88"/>
+    <stop offset=".55" stop-color="#010b15" stop-opacity=".55"/>
+    <stop offset="1" stop-color="#010b15" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="coolBounce" cx="35%" cy="30%" r="72%">
+    <stop offset="0" stop-color="#4bb7ff" stop-opacity=".20"/>
+    <stop offset=".65" stop-color="#2c7ab5" stop-opacity=".06"/>
+    <stop offset="1" stop-color="#2c7ab5" stop-opacity="0"/>
+  </radialGradient>
+  <linearGradient id="raisedRim" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#a2d9ff"/>
+    <stop offset=".23" stop-color="#4686b7"/>
+    <stop offset=".62" stop-color="#1a4770"/>
+    <stop offset="1" stop-color="#071a2f"/>
+  </linearGradient>
+  <radialGradient id="raisedFace" cx="32%" cy="25%" r="83%">
+    <stop offset="0" stop-color="#295778"/>
+    <stop offset=".25" stop-color="#1c4167"/>
+    <stop offset=".60" stop-color="#122f4f"/>
+    <stop offset="1" stop-color="#081c33"/>
+  </radialGradient>
+  <linearGradient id="wellRim" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#000813"/>
+    <stop offset=".38" stop-color="#06182c"/>
+    <stop offset=".75" stop-color="#35618a"/>
+    <stop offset="1" stop-color="#548ab7"/>
+  </linearGradient>
+  <radialGradient id="wellFace" cx="35%" cy="28%" r="83%">
+    <stop offset="0" stop-color="#061525"/>
+    <stop offset=".5" stop-color="#0b2139"/>
+    <stop offset=".84" stop-color="#143858"/>
+    <stop offset="1" stop-color="#204b70"/>
+  </radialGradient>
+  <linearGradient id="upperArc" x1="0" y1="0" x2=".9" y2="1">
+    <stop offset="0" stop-color="#b8e5ff" stop-opacity=".8"/>
+    <stop offset=".55" stop-color="#81bdea" stop-opacity=".24"/>
+    <stop offset="1" stop-color="#2e7ba9" stop-opacity="0"/>
+  </linearGradient>
+  <linearGradient id="lowerArc" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#4d83b1" stop-opacity="0"/>
+    <stop offset=".5" stop-color="#3c83bb" stop-opacity=".27"/>
+    <stop offset="1" stop-color="#7dc5fb" stop-opacity=".66"/>
+  </linearGradient>
+
+  <!-- Soft cyan bloom. The multiple vector strokes beneath also render in Qt SVG without filter support. -->
+  <filter id="hoverRingBloom" x="-40%" y="-40%" width="180%" height="180%" color-interpolation-filters="sRGB">
+    <feGaussianBlur stdDeviation="3.6"/>
+  </filter>
+
+  <!-- Lifted hover shadows: offset below the disc to show air beneath it. -->
+  <radialGradient id="liftShadowWide" cx="50%" cy="48%" r="52%">
+    <stop offset="0" stop-color="#000510" stop-opacity="0.88"/>
+    <stop offset="0.43" stop-color="#010917" stop-opacity="0.63"/>
+    <stop offset="0.77" stop-color="#021124" stop-opacity="0.24"/>
+    <stop offset="1" stop-color="#041728" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="liftShadowDeep" cx="50%" cy="50%" r="50%">
+    <stop offset="0" stop-color="#000409" stop-opacity="0.94"/>
+    <stop offset="0.48" stop-color="#000a19" stop-opacity="0.59"/>
+    <stop offset="1" stop-color="#061427" stop-opacity="0"/>
+  </radialGradient>
+  <linearGradient id="liftSidewall" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#6096bd"/>
+    <stop offset="0.32" stop-color="#193c61"/>
+    <stop offset="0.72" stop-color="#05172e"/>
+    <stop offset="1" stop-color="#010a17"/>
+  </linearGradient>
+  <radialGradient id="liftFaceSheen" cx="26%" cy="19%" r="78%">
+    <stop offset="0" stop-color="#75c6ff" stop-opacity="0.16"/>
+    <stop offset="0.42" stop-color="#75c6ff" stop-opacity="0.055"/>
+    <stop offset="1" stop-color="#75c6ff" stop-opacity="0"/>
+  </radialGradient>
+</defs>
+<g id="neumorphic-raised-surface"><!-- Soft surrounding shadow: no SVG filter needed (Qt SVG friendly). -->
+<!-- Elevated button: two ground shadows stay below the floating disk. -->
+<g id="lifted-ground-shadow" pointer-events="none">
+  <ellipse cx="67" cy="84" rx="52" ry="34" fill="url(#liftShadowWide)" opacity="0.94"/>
+  <ellipse cx="65" cy="81" rx="43" ry="28" fill="url(#liftShadowDeep)" opacity="0.84"/>
+  <ellipse cx="63" cy="74" rx="43" ry="34" fill="url(#ambient)" opacity="0.48"/>
+</g>
+
+<!--
+  Adjust intensity using opacity:
+  1 = FULL
+  0.5 = HALF
+  0.25 = SUBTLE
+  0 = OFF
+-->
+<ellipse cx="50" cy="48" rx="47" ry="47" fill="url(#coolBounce)" opacity="0"/>
+<!-- Dark lower/right thickness: shows the disc projecting above the page. -->
+<circle cx="60.8" cy="60.6" r="45.4" fill="#041326" stroke="#020c19" stroke-width="1.25"/>
+<circle cx="60.2" cy="59.0" r="45.1" fill="url(#liftSidewall)"/>
+<path d="M24 85 A44.8 44.8 0 0 0 94 85" fill="none" stroke="#020b18" stroke-opacity="0.70" stroke-width="3.1" stroke-linecap="round"/>
+<!-- Raised face and bevel -->
+<circle cx="60" cy="57" r="45.5" fill="#071625" stroke="#04101f" stroke-width="1"/>
+<circle cx="60" cy="56.5" r="44" fill="url(#raisedRim)"/>
+<circle cx="60" cy="57.2" r="42.4" fill="url(#raisedFace)"/>
+<circle cx="60" cy="57.2" r="42.2" fill="url(#liftFaceSheen)"/>
+<circle cx="60" cy="57.2" r="40.5" fill="none" stroke="#65a3d7" stroke-opacity=".18" stroke-width=".75"/>
+<!-- A brighter upper-left rim and stronger lower-right occlusion sell the hover lift. -->
+<path d="M25.8 34 A44 44 0 0 1 86 22.8" fill="none" stroke="#c8efff" stroke-opacity="0.46" stroke-width="1.55" stroke-linecap="round"/>
+<path d="M95 78 A42.8 42.8 0 0 1 79 95" fill="none" stroke="#010916" stroke-opacity="0.42" stroke-width="2.2" stroke-linecap="round"/>
+<!-- Directional beveled glints -->
+<path d="M22 37 A43 43 0 0 1 88 25" fill="none" stroke="url(#upperArc)" stroke-width="1.8" stroke-linecap="round"/>
+<path d="M93 83 A43 43 0 0 1 32 90" fill="none" stroke="#020d1c" stroke-opacity=".5" stroke-width="2" stroke-linecap="round"/>
+<circle cx="60" cy="57" r="39" fill="url(#coolBounce)" opacity=".28"/></g>
+<!-- Distinct electric-blue circular hover/selection ring. Edit these strokes independently. -->
+<g id="hover-highlight-ring" pointer-events="none">
+  <g class="hover-ring-glow">
+    <circle cx="60" cy="57" r="46.1" fill="none" stroke="#2aa7ff" stroke-width="8.5" opacity=".20" filter="url(#hoverRingBloom)"/>
+    <circle cx="60" cy="57" r="46.1" fill="none" stroke="#258dea" stroke-width="13" opacity=".075"/>
+    <circle cx="60" cy="57" r="46.1" fill="none" stroke="#329bff" stroke-width="9.5" opacity=".13"/>
+    <circle cx="60" cy="57" r="46.1" fill="none" stroke="#42b9ff" stroke-width="5.5" opacity=".23"/>
+  </g>
+  <g class="hover-ring-crisp">
+    <circle cx="60" cy="57" r="46.1" fill="none" stroke="#0b65ba" stroke-width="3.4" opacity=".68"/>
+    <circle cx="60" cy="57" r="46.1" fill="none" stroke="#38b5ff" stroke-width="2.3" opacity="1"/>
+    <circle cx="60" cy="57" r="46.1" fill="none" stroke="#d1f3ff" stroke-width=".65" opacity=".86"/>
+  </g>
+</g>
+<g id="original-windows-artwork"><g transform="translate(60 59) scale(0.61) translate(-47.375 -53.625)">
+          <path  id="shortcut-arrow" fill="#299EF8" d="M22.2 14.2 H76.8 V68.3 L59.5 51 44.4 66.3 C38.4 72.3 35.8 80.3 42.6 91.9 C43.2 92.9 42.2 93.2 40.9 93 C27.3 90.7 18 81.3 17.8 68.3 C17.6 55.4 23.7 46.9 31.6 39.1 L39 31.6 Z" />
+
+        </g>
+</g>
+</svg>

@@ -35,6 +35,10 @@ ThemeMode = Literal["light", "dark"]
 
 _PREFERENCES_FILENAME = "ui_preferences.json"
 _THEMES: tuple[ThemeMode, ...] = ("light", "dark")
+ACCENT_PRESETS = ("blue", "gold", "orange", "pink", "purple", "teal")
+SERVICE_ANIMATIONS = ("group", "badge", "mark")
+STARTUP_DEFAULTS = {"warm_start": False, "adaptive_splash": False, "launch_at_login": False}
+PREPARABLE_SERVICES = ("graph",)  # Only services with a working Connections interface.
 
 
 def _read_preferences(directory: Path | None = None) -> dict:
@@ -65,13 +69,18 @@ def save_theme_preference(mode: ThemeMode) -> None:
 
 def _save_preference(key: str, value, directory: Path | None = None) -> None:
     """Merge visual settings, then atomically replace just the preference file."""
+    _save_preferences({key: value}, directory)
+
+
+def _save_preferences(updates: dict, directory: Path | None = None) -> bool:
+    """Commit related preferences together and report persistence failures."""
     temporary_path = None
     try:
         folder = directory if directory is not None else get_config_dir(create=True)
         folder = ensure_private_directory(folder)
         target = folder / _PREFERENCES_FILENAME
         payload = _read_preferences(folder)
-        payload[key] = value
+        payload.update(updates)
         descriptor, name = tempfile.mkstemp(prefix=f".{target.name}.", dir=folder)
         temporary_path = Path(name)
         with os.fdopen(descriptor, "w", encoding="utf-8") as stream:
@@ -80,10 +89,47 @@ def _save_preference(key: str, value, directory: Path | None = None) -> None:
             stream.flush()
             os.fsync(stream.fileno())
         os.replace(temporary_path, target)
+        return True
     except OSError:
         if temporary_path is not None:
             with suppress(OSError):
                 temporary_path.unlink(missing_ok=True)
+        return False
+
+
+def load_appearance_preferences(*, directory: Path | None = None) -> dict:
+    values = _read_preferences(directory).get("appearance", {})
+    if not isinstance(values, dict):
+        values = {}
+    accent = values.get("accent")
+    show_info = values.get("show_info_buttons")
+    animation = values.get("service_animation")
+    return {
+        "accent": accent if accent in ACCENT_PRESETS else "blue",
+        "show_info_buttons": show_info if type(show_info) is bool else True,
+        "service_animation": animation if animation in SERVICE_ANIMATIONS else "group",
+    }
+
+
+def save_appearance_preferences(
+    accent: str, show_info: bool, service_animation: str | None = None, *, directory=None
+) -> bool:
+    if accent not in ACCENT_PRESETS or type(show_info) is not bool:
+        return False
+    if service_animation is None:
+        service_animation = load_appearance_preferences(directory=directory)["service_animation"]
+    if service_animation not in SERVICE_ANIMATIONS:
+        return False
+    return _save_preferences(
+        {
+            "appearance": {
+                "accent": accent,
+                "show_info_buttons": show_info,
+                "service_animation": service_animation,
+            }
+        },
+        directory,
+    )
 
 
 def load_zoom_preference(*, directory: Path | None = None) -> int:
@@ -97,10 +143,70 @@ def save_zoom_preference(value: int, *, directory: Path | None = None) -> None:
         _save_preference("connections_zoom_percent", value, directory)
 
 
+def load_startup_preferences(*, directory: Path | None = None) -> dict:
+    values = _read_preferences(directory).get("startup", {})
+    if not isinstance(values, dict):
+        values = {}
+    return {
+        key: values[key] if type(values.get(key)) is bool else default
+        for key, default in STARTUP_DEFAULTS.items()
+    }
+
+
+def load_visited_services(*, directory=None):
+    values = _read_preferences(directory).get("visited_services", [])
+    if not isinstance(values, list):
+        return []
+    return [service for service in PREPARABLE_SERVICES if service in values]
+
+
+def record_service_visit(service, *, directory=None):
+    if service not in PREPARABLE_SERVICES:
+        return False
+    visited = load_visited_services(directory=directory)
+    if service in visited:
+        return True
+    return _save_preferences({"visited_services": [*visited, service]}, directory)
+
+
+def save_settings_preferences(accent, show_info, service_animation, startup, *, directory=None):
+    """Save both settings tabs in one atomic preference-file replacement."""
+    if (
+        accent not in ACCENT_PRESETS
+        or type(show_info) is not bool
+        or service_animation not in SERVICE_ANIMATIONS
+        or not isinstance(startup, dict)
+        or set(startup) != set(STARTUP_DEFAULTS)
+        or any(type(value) is not bool for value in startup.values())
+    ):
+        return False
+    return _save_preferences(
+        {
+            "appearance": {
+                "accent": accent,
+                "show_info_buttons": show_info,
+                "service_animation": service_animation,
+            },
+            "startup": dict(startup),
+        },
+        directory,
+    )
+
+
 __all__ = [
     "ThemeMode",
     "load_theme_preference",
     "save_theme_preference",
     "load_zoom_preference",
     "save_zoom_preference",
+    "ACCENT_PRESETS",
+    "SERVICE_ANIMATIONS",
+    "load_appearance_preferences",
+    "save_appearance_preferences",
+    "STARTUP_DEFAULTS",
+    "load_startup_preferences",
+    "save_settings_preferences",
+    "load_visited_services",
+    "record_service_visit",
+    "PREPARABLE_SERVICES",
 ]

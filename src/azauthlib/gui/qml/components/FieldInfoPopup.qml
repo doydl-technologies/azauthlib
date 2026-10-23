@@ -2,7 +2,6 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import QtQuick.Controls
-import QtQuick.Effects
 import "../theme"
 
 Popup {
@@ -34,26 +33,10 @@ Popup {
         NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 120 }
     }
     exit: Transition {
-        NumberAnimation { property: "opacity"; from: 1; to: 0; duration: 90 }
+        NumberAnimation { property: "opacity"; to: 0; duration: ConnectionTheme.popupExitDuration; easing.type: Easing.InOutCubic }
     }
 
-    background: Rectangle {
-        radius: 14
-        border.width: 1
-        border.color: Theme.darkMode ? "#36b5ef" : "#90bfe9"
-        gradient: Gradient {
-            GradientStop { position: 0; color: Theme.darkMode ? "#142f4d" : "#ffffff" }
-            GradientStop { position: 1; color: Theme.darkMode ? "#091c30" : "#edf5fc" }
-        }
-        layer.enabled: true
-        layer.effect: MultiEffect {
-            shadowEnabled: true
-            shadowColor: Theme.shadow
-            shadowOpacity: 0.28
-            shadowBlur: 0.4
-            shadowVerticalOffset: 4
-        }
-    }
+    background: DialogSurface { objectName: root.objectName + "Surface" }
 
     contentItem: Item {
         implicitHeight: textColumn.implicitHeight
@@ -94,10 +77,10 @@ Popup {
                 lineHeight: 1.3
                 wrapMode: Text.Wrap
             }
-            Rectangle {
-                width: parent.width
-                height: 1
-                color: Theme.border
+            DialogDivider {
+                objectName: root.objectName + "Divider"
+                x: -textColumn.x
+                width: parent.width + textColumn.x
             }
             Text {
                 width: parent.width
@@ -135,7 +118,8 @@ Popup {
             Accessible.name: "Close information"
             onClicked: root.close()
             contentItem: Image {
-                source: Qt.resolvedUrl("../../../assets/icons/svg/actions/Monocolor-Filled-Ice-Blue-close.svg")
+                source: AccentTheme.customAccent ? AccentTheme.artwork("Monocolor-Filled-Ice-Blue-close.svg") :
+                    Qt.resolvedUrl("../../../assets/icons/svg/actions/Monocolor-Filled-Ice-Blue-close.svg")
                 fillMode: Image.PreserveAspectFit
                 smooth: true
                 mipmap: true
@@ -143,7 +127,7 @@ Popup {
             background: Rectangle {
                 radius: 5
                 color: closeButton.pressed ?
-                           (Theme.darkMode ? "#254866" : "#c4ddf4") :
+                           (Theme.darkMode ? AccentTheme.color("#254866") : "#c4ddf4") :
                        closeButton.hovered ?
                            (Theme.darkMode ? Theme.surfaceHover : "#d8e9f8") :
                            "transparent"

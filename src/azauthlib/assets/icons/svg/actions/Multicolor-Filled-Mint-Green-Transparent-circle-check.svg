@@ -1,0 +1,122 @@
+
+<svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="136"
+    height="136"
+    viewBox="0 0 24 24"
+    fill="none"
+    class="lucide lucide-circle-check preview-icon"
+>
+    <!-- =================================
+         CIRCLE STROKE OPTIONS
+         Thin:     1.25
+         Standard: 2.25
+         Thick:    3.00
+
+         CHECKMARK SIZE OPTIONS
+         Original: 1.00
+         Medium:   1.20
+         Large:    1.30
+         Larger:   1.40
+
+         CHECKMARK STROKE OPTIONS
+         Thin:     1.00
+         Medium:   1.50
+         Thick:    2.00
+
+         CHECKMARK TRANSPARENCY
+         0.00 = Solid green (no cutout)
+         0.50 = Partially transparent
+         1.00 = Fully transparent cutout
+         ================================= -->
+
+    <style>
+        svg {
+            /* Circle colors */
+            --icon-stroke-color: #5bdcaf;
+            --icon-fill-color: #5bdcaf;
+
+            /* Circle stroke settings */
+            --icon-stroke-width: 2.25;
+
+            /* Checkmark settings */
+            --checkmark-stroke-width: 2.00;
+            --checkmark-scale: 1.30;
+            --checkmark-transparency: 1.00;
+
+            /* Stroke appearance */
+            --icon-linecap: round;
+            --icon-linejoin: round;
+        }
+
+        .icon-shape {
+            stroke-linecap: var(--icon-linecap);
+            stroke-linejoin: var(--icon-linejoin);
+        }
+
+        .icon-circle {
+            fill: var(--icon-fill-color);
+            stroke: var(--icon-stroke-color);
+            stroke-width: var(--icon-stroke-width);
+        }
+
+        .icon-checkmark-cutout {
+            fill: none;
+            stroke: black;
+            stroke-width: var(--checkmark-stroke-width);
+
+            stroke-linecap: var(--icon-linecap);
+            stroke-linejoin: var(--icon-linejoin);
+
+            transform: scale(var(--checkmark-scale));
+            transform-origin: 12px 12px;
+            transform-box: view-box;
+
+            opacity: var(--checkmark-transparency);
+        }
+    </style>
+
+    <!-- ================================= -->
+    <!-- TRANSPARENCY MASK                 -->
+    <!-- ================================= -->
+
+    <defs>
+        <mask
+            id="checkmark-cutout-mask"
+            maskUnits="userSpaceOnUse"
+            x="0"
+            y="0"
+            width="24"
+            height="24"
+        >
+            <!-- White keeps the circle visible -->
+            <rect
+                x="0"
+                y="0"
+                width="24"
+                height="24"
+                fill="white"
+            />
+
+            <!-- Black removes the checkmark area -->
+            <path
+                class="icon-checkmark-cutout"
+                d="m16 9-5.5 5.5L8 12"
+            />
+        </mask>
+    </defs>
+
+    <!-- ================================= -->
+    <!-- ICON GEOMETRY                     -->
+    <!-- ================================= -->
+
+    <!-- Green circle with transparent checkmark -->
+    <circle
+        class="icon-shape icon-circle"
+        cx="12"
+        cy="12"
+        r="10"
+        mask="url(#checkmark-cutout-mask)"
+    />
+
+</svg>

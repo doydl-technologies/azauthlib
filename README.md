@@ -28,6 +28,7 @@
 - [Public-client authentication](#public-client-authentication)
 - [Device-code authentication](#device-code-authentication)
 - [Client-credentials authentication](#client-credentials-authentication)
+- [Certificate authentication](docs/certificate-authentication.md)
 - [Configuration](#configuration)
 - [Upgrading from 1.4.0b1](#upgrading-from-140b1)
 - [Token-cache security](#token-cache-security)
@@ -40,6 +41,8 @@
 - Interactive, silent, device-code, and client-credentials authentication.
 - Encrypted, cross-process-safe token persistence through MSAL Extensions.
 - Client secrets stored in the operating-system credential manager.
+- PFX/P12 and PEM certificate credentials, with GUI creation (90-day default), local validation and optional
+  profile-scoped password storage. See [Certificate authentication](docs/certificate-authentication.md).
 - Exact-path `.env` loading; no upward directory search.
 - Delegated and application scope handling kept separate.
 - No filesystem writes or global logging configuration during import.
@@ -277,6 +280,15 @@ twine check dist/*
 
 See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), and
 [CHANGELOG.md](CHANGELOG.md). Maintainers should also follow [RELEASING.md](RELEASING.md).
+
+The [tutorial screenshot index](assets/html/tutorial-index.html) can be opened locally
+after cloning the repository. Its screenshots are documentation assets, not installed runtime files.
+
+For a connection-free animation preview from an editable checkout:
+
+```bash
+python .github/desktop/preview_add_connection_animation.py --loop
+```
 
 ## License
 
