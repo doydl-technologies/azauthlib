@@ -97,6 +97,9 @@ Existing files with the same name are not overwritten. These launchers use the c
 Python environment, rather than bundling Python; keep that environment installed at the
 same location. If it moves, remove the old launcher and create another from the new environment.
 
+See [Startup preferences](docs/startup-behavior.md) for optional faster repeat launches,
+splash-screen behavior and opening the app at login.
+
 ## Public-client authentication
 
 ```python
