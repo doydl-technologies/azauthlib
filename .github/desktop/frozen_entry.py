@@ -20,11 +20,15 @@
 
 """Standalone entry point, including an explicit isolated native smoke-check mode."""
 
+import os
 import sys
 from pathlib import Path
 
 
 def main():
+    if sys.platform.startswith("linux"):
+        # Keep frozen Linux GUI/render callbacks on one thread; OpenGL stays active.
+        os.environ.setdefault("QSG_RENDER_LOOP", "basic")
     if len(sys.argv) > 1 and sys.argv[1] == "--desktop-setup":
         from azauthlib.gui.desktop_setup import main as setup
 
