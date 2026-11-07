@@ -166,8 +166,10 @@ def check(archive, checksum, artifacts, report):
     while not child_report.exists() and time.monotonic() < deadline:
         QTest.qWait(50)
     require(child_report.is_file(), "The installed app did not complete its isolated launch check")
+    child_result = json.loads(child_report.read_text())
     require(
-        json.loads(child_report.read_text())["status"] == "passed", "Installed child startup failed"
+        child_result["status"] == "passed",
+        "Installed child startup failed: " + str(child_result.get("error", child_result)),
     )
     launch_probe._launched_process.wait(timeout=30)
     report["checks"].append(

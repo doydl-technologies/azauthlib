@@ -97,6 +97,7 @@ jobs:
             standalone/frozen-check/
             standalone/qt-resource-report.json
             standalone/setup-check/setup-report.json
+            standalone/setup-check/launch-check/
             standalone/setup-check/setup-*.png
             standalone/windows-installer/*-setup.exe
             standalone/windows-installer/*.msi
