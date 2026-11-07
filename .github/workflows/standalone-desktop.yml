@@ -54,7 +54,19 @@ jobs:
       - run: python -m build --wheel
       - name: Install the regular wheel for freezing
         shell: bash
-        run: python -m pip install dist/*.whl
+        env:
+          # Intel macOS may build cryptography from source; avoid shared OpenSSL collisions.
+          OPENSSL_STATIC: '1'
+        run: |
+          python -m pip install --no-cache-dir dist/*.whl
+          python - <<'PYTHON'
+          import subprocess, sys
+          if sys.platform == 'darwin':
+              from cryptography.hazmat.bindings import _rust
+              linked = subprocess.check_output(['otool', '-L', _rust.__file__], text=True)
+              if any(name in linked for name in ('libssl.', 'libcrypto.')):
+                  raise SystemExit('macOS cryptography must use a statically linked OpenSSL build')
+          PYTHON
       - name: Test setup wizard and build helpers
         run: |
           python -m pip install pytest
