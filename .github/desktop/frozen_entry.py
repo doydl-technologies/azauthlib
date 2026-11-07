@@ -20,6 +20,7 @@
 
 """Standalone entry point, including an explicit isolated native smoke-check mode."""
 
+import os
 import sys
 from pathlib import Path
 
@@ -40,6 +41,8 @@ def main():
         # in the caller's explicit test folder, never the user's configuration.
         with (artifacts / "frozen-output.log").open("w", encoding="utf-8") as stream:
             sys.stdout = sys.stderr = stream
+            if sys.platform.startswith("linux"):
+                os.dup2(stream.fileno(), 2)
             import _azauthlib_desktop_smoke
 
             return _azauthlib_desktop_smoke.main(

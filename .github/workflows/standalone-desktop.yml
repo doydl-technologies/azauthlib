@@ -38,7 +38,7 @@ jobs:
             libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 \
             libxcb-render0 libxcb-render-util0 libxcb-shape0 libxcb-shm0 \
             libxcb-randr0 libxcb-sync1 libxcb-xfixes0 libxcb-xinerama0 \
-            libxcb-xinput0 libxcb-xkb1
+            libxcb-xinput0 libxcb-xkb1 gdb
       - run: python -m pip install build "pyinstaller>=6.22.1,<7"
       - run: python -m build --wheel
       - name: Install the regular wheel for freezing
@@ -56,7 +56,28 @@ jobs:
         env:
           LIBGL_ALWAYS_SOFTWARE: '1'
           QSG_RHI_BACKEND: opengl
-        run: xvfb-run -a -s "-screen 0 1600x1000x24" python .github/desktop/build_standalone.py --output standalone
+        run: |
+          xvfb-run -a -s "-screen 0 1600x1000x24" bash -c '
+            python .github/desktop/build_standalone.py --output standalone &
+            build_pid=$!
+            (
+              while kill -0 "$build_pid" 2>/dev/null; do
+                for child in $(pgrep -f "setup-check/installation/azauthlib/azauthlib --desktop-self-check" || true); do
+                  sleep 30
+                  if kill -0 "$child" 2>/dev/null; then
+                    sudo gdb -batch -ex "set pagination off" -ex "thread apply all bt" -p "$child" > standalone/native-trace.txt 2>&1 || true
+                  fi
+                done
+                sleep 5
+              done
+            ) &
+            trace_pid=$!
+            wait "$build_pid"
+            result=$?
+            kill "$trace_pid" 2>/dev/null || true
+            if [ -f standalone/native-trace.txt ]; then cat standalone/native-trace.txt; fi
+            exit "$result"
+          '
       - uses: msys2/setup-msys2@ec48f7c5447b3140e2b088413ae3a55687bccb6e # v2
         if: runner.os == 'Windows'
         with:
@@ -96,6 +117,7 @@ jobs:
             standalone/*.sha256
             standalone/frozen-check/
             standalone/qt-resource-report.json
+            standalone/native-trace.txt
             standalone/setup-check/setup-report.json
             standalone/setup-check/launch-check/
             standalone/setup-check/setup-*.png
