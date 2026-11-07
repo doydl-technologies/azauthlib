@@ -77,7 +77,7 @@ def module_in_runtime(module_file, installed):
 def run_checks(installed, artifacts, report):
     sys.path.insert(0, str(installed))
     import PySide6
-    from PySide6.QtCore import QObject, QPointF, Qt, QUrl, Slot
+    from PySide6.QtCore import QEventLoop, QObject, QPointF, Qt, QTimer, QUrl, Slot
     from PySide6.QtGui import QDesktopServices, QGuiApplication
     from PySide6.QtQml import QQmlApplicationEngine, QQmlComponent
     from PySide6.QtQuick import QQuickWindow
@@ -109,10 +109,20 @@ def run_checks(installed, artifacts, report):
         raise AssertionError("Splash/authentication/network access is forbidden in CI smoke checks")
 
     def wait_for(predicate, description):
-        for _ in range(1200):
-            if predicate():
-                return
-            QTest.qWait(25)
+        if predicate():
+            return
+        # A native event loop lets deferred Python workers acquire the GIL.
+        loop = QEventLoop()
+        poll = QTimer()
+        poll.timeout.connect(lambda: loop.quit() if predicate() else None)
+        deadline = QTimer()
+        deadline.setSingleShot(True)
+        deadline.timeout.connect(loop.quit)
+        poll.start(25)
+        deadline.start(30_000)
+        loop.exec()
+        poll.stop()
+        deadline.stop()
         require(predicate(), "Timed out: " + description)
 
     main = engine = resources = startup = app = None

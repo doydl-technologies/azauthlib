@@ -205,7 +205,7 @@ def build(output, *, self_check=True):
     )
     if self_check:
         release = DesktopRelease(version, target, "", digest.hexdigest(), archive.stat().st_size)
-        subprocess.run(
+        setup_result = subprocess.run(
             [
                 str(payload / target.executable),
                 "--desktop-setup-self-check",
@@ -218,8 +218,14 @@ def build(output, *, self_check=True):
             ],
             env=verification_environment(),
             timeout=600,
-            check=True,
+            check=False,
         )
+        if setup_result.returncode:
+            for diagnostic in ("setup-report.json", "launch-check/frozen-output.log"):
+                path = output / "setup-check" / diagnostic
+                if path.is_file():
+                    print(path.read_text(encoding="utf-8", errors="replace"), flush=True)
+            setup_result.check_returncode()
         executable = output / "setup-check/installation" / target.root_name / target.executable
         verify_standalone(executable, output / "frozen-check")
     print(f"Standalone bundle: {archive}")
