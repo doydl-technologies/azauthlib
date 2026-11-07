@@ -3,6 +3,17 @@ name: Build standalone desktop bundles
 on:
   workflow_dispatch:
     inputs:
+      platform:
+        description: Build target (release uploads require all)
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - windows-2025
+          - macos-15
+          - macos-15-intel
+          - ubuntu-22.04
       release_tag:
         description: Existing draft release tag to receive verified desktop assets (optional)
         required: false
@@ -19,7 +30,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-2025, macos-15, macos-15-intel, ubuntu-22.04]
+        os: ${{ fromJSON(inputs.platform == 'all' && '["windows-2025","macos-15","macos-15-intel","ubuntu-22.04"]' || format('["{0}"]', inputs.platform)) }}
     env:
       PYTHONUNBUFFERED: '1'
       QT_QUICK_CONTROLS_STYLE: Basic
@@ -64,8 +75,9 @@ jobs:
               while kill -0 "$build_pid" 2>/dev/null; do
                 for child in $(pgrep -f "^[^ ]*/setup-check/installation/azauthlib/azauthlib --desktop-self-check" || true); do
                   sleep 30
-                  if kill -0 "$child" 2>/dev/null; then
-                    sudo gdb -batch -ex "set pagination off" -ex "thread apply all bt" -p "$child" > standalone/native-trace.txt 2>&1 || true
+                  if kill -0 "$child" 2>/dev/null && [ ! -f standalone/native-trace.txt ]; then
+                    sudo timeout 30 gdb -batch -ex "set pagination off" -ex "thread apply all bt" -p "$child" > standalone/native-trace.txt 2>&1 || true
+                    cat standalone/native-trace.txt
                   fi
                 done
                 sleep 5
@@ -132,6 +144,7 @@ jobs:
           if-no-files-found: warn
 
   checksums:
+    if: inputs.platform == 'all'
     needs: build
     runs-on: ubuntu-latest
     permissions:
