@@ -62,7 +62,7 @@ jobs:
             build_pid=$!
             (
               while kill -0 "$build_pid" 2>/dev/null; do
-                for child in $(pgrep -f "setup-check/installation/azauthlib/azauthlib --desktop-self-check" || true); do
+                for child in $(pgrep -f "^[^ ]*/setup-check/installation/azauthlib/azauthlib --desktop-self-check" || true); do
                   sleep 30
                   if kill -0 "$child" 2>/dev/null; then
                     sudo gdb -batch -ex "set pagination off" -ex "thread apply all bt" -p "$child" > standalone/native-trace.txt 2>&1 || true
