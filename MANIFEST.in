@@ -2,6 +2,13 @@
 include CHANGELOG.md
 recursive-include docs *.md
 recursive-include tests *.py
+exclude RELEASING.md
+global-exclude RELEASE_NOTES*.md *release-notes*.md
+prune .releases
+prune .releases-process
+prune .github/release-notes
+prune release-notes
+prune docs/release-notes
 exclude src/azauthlib/gui/preview_add_connection_animation.py
 exclude src/azauthlib/gui/qml/AddConnectionAnimationPreview.qml
 exclude src/azauthlib/gui/qml/ConnectionAnimationSimulation.qml

@@ -47,3 +47,11 @@ scripts/
 /src/azauthlib/assets/logo/png/.dormant/
 /src/azauthlib/assets/logo/svg/.dormant/
 /_run.cmd
+
+# Local maintainer documents.
+RELEASING.md
+RELEASE_NOTES*.md
+*release-notes*.md
+release-notes/
+.releases/
+.releases-process/

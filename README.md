@@ -282,7 +282,7 @@ twine check dist/*
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), and
-[CHANGELOG.md](CHANGELOG.md). Maintainers should also follow [RELEASING.md](RELEASING.md).
+[CHANGELOG.md](CHANGELOG.md).
 
 The [tutorial screenshot index](assets/html/tutorial-index.html) can be opened locally
 after cloning the repository. Its screenshots are documentation assets, not installed runtime files.
