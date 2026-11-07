@@ -433,24 +433,6 @@ application does not need to remain open while your script uses its saved profil
 
 </details>
 
-<details>
-<summary>Historical screenshots — older interfaces, not the current walkthrough</summary>
-
-Earlier captures are kept in [the screenshot archive](https://github.com/doydl-technologies/azauthlib/tree/main/assets/png/.archive)
-for reference. Follow the numbered tutorial above for the current interface.
-
-- [Earlier startup splash](https://raw.githubusercontent.com/doydl-technologies/azauthlib/main/assets/png/.archive/splash.png)
-- [Earlier Main Menu](https://raw.githubusercontent.com/doydl-technologies/azauthlib/main/assets/png/.archive/main_menu.png)
-- [Earlier Microsoft Graph Connections page](https://raw.githubusercontent.com/doydl-technologies/azauthlib/main/assets/png/.archive/ms_graph_connection_menu.png)
-- [Earlier Interactive connection form](https://raw.githubusercontent.com/doydl-technologies/azauthlib/main/assets/png/.archive/add_connection_interactive.png)
-- [Earlier Device code connection form](https://raw.githubusercontent.com/doydl-technologies/azauthlib/main/assets/png/.archive/add_connection_device_code.png)
-- [Earlier client-credentials form](https://raw.githubusercontent.com/doydl-technologies/azauthlib/main/assets/png/.archive/add_connection_client_creds.png)
-- [Earlier test in progress](https://raw.githubusercontent.com/doydl-technologies/azauthlib/main/assets/png/.archive/test_connection.png)
-- [Earlier passed test](https://raw.githubusercontent.com/doydl-technologies/azauthlib/main/assets/png/.archive/connection_passed.png)
-- [Earlier failed test](https://raw.githubusercontent.com/doydl-technologies/azauthlib/main/assets/png/.archive/connection_failed.png)
-
-</details>
-
 ## Use your saved connection in Python
 
 This example uses an **Interactive** profile named `Work account`, configured with delegated
@@ -681,7 +663,7 @@ Error logs include error codes and correlation IDs, not full response dictionari
 | Python requests sign-in after a successful GUI test | GUI tests use a temporary token cache. Your Python session creates/reuses its own persisted authentication cache. |
 | Saved certificate files cannot be found | Keep the private key and certificate at the configured local paths, or edit the connection and validate the new paths. |
 | Secure token storage is unavailable | Check the OS credential/encryption backend. Linux needs a working Secret Service/LibSecret setup; see [Token-cache security](#token-cache-security). |
-| The standalone download is unavailable | The matching GitHub release must provide desktop assets. The published `v5.0.0` does not include these new standalone installers; use the Python-based app or a verified local build. |
+| The standalone download is unavailable | The selected GitHub release must provide desktop assets for your platform. Upgrade the library and run `azauthlib-install-desktop --check` to check the matching download. |
 
 For help, use the app's information drawers and the [issue tracker](https://github.com/doydl-technologies/azauthlib/issues).
 Include the app/library version, operating system, authentication method and sanitized error

@@ -39,9 +39,8 @@ The cancelled result remains visible with an **Aborted** status until the window
 Successful setup still closes automatically without opening the app. The window can be
 dragged or minimized, but cannot be resized or maximized.
 It opens centered in the usable work area of the monitor under the mouse pointer,
-accounting for display scaling and the taskbar. The local `test_uninstall.cmd` likewise
-centers the Windows Installer removal dialog when it appears. Positioning happens once
-per window, so dragging it afterward does not cause it to snap back.
+accounting for display scaling and the taskbar. Positioning happens once per setup window,
+so dragging it afterward does not cause it to snap back.
 Failed or cancelled upgrades restore the previous managed application files. Close the
 running app before upgrading; files in use cause setup to cancel rather than force-close it.
 Successful installation can be removed through Windows **Installed apps**. Installation,
@@ -82,7 +81,7 @@ download/runtime files are removed after the setup window exits.
 
 When launch is selected, **Finish** starts the installed executable as an independent
 process and closes setup without waiting for the app to exit. It does not reuse the
-temporary setup runtime. Close an older running instance before testing a newly built app;
+temporary setup runtime. Close an older running instance before opening another installation;
 single-instance activation otherwise restores that existing instance.
 
 The standalone application includes its Python runtime and dependencies. Removing the
@@ -122,9 +121,9 @@ and credential-store behavior.
 ### Availability
 
 The setup command requires matching desktop assets on the official GitHub release.
-Previously published releases, including `v5.0.0`, do not currently include those assets.
-Until a new command/package and its corresponding desktop bundles are released, use a
-source checkout to test the command and the existing `azauthlib-app` to open the GUI.
+Version `6.0.1` provides standalone desktop downloads. Earlier releases such as `v5.0.0`
+do not include them. Upgrade the Python library to select the matching current desktop
+release, or use `azauthlib-app` to open the Python-based GUI.
 An unavailable asset produces an explanation, not a partial installation or a fallback
 that pretends to be standalone.
 

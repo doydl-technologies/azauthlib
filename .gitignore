@@ -61,3 +61,7 @@ release-notes/
 
 # Private maintainer previews and inspection tools.
 /.local-tools/
+
+# Local design concepts and historical UI references.
+/assets/mascot/
+/assets/png/.archive/
