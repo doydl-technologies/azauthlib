@@ -58,3 +58,6 @@ release-notes/
 .releases/
 .releases-process/
 /assets/mascot/*-prompt.txt
+
+# Private maintainer previews and inspection tools.
+/.local-tools/

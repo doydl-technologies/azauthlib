@@ -707,12 +707,6 @@ See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), and
 The [tutorial screenshot index](assets/html/tutorial-index.html) can be opened locally
 after cloning the repository. Its screenshots are documentation assets, not installed runtime files.
 
-For a connection-free animation preview from an editable checkout:
-
-```bash
-python .github/desktop/preview_add_connection_animation.py --loop
-```
-
 ## License
 
 Apache License 2.0. Microsoft, Azure, Entra, and Microsoft Graph are trademarks of Microsoft and
