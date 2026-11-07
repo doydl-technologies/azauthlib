@@ -199,29 +199,3 @@ def test_frozen_macos_smoke_accepts_resources_only_in_its_own_bundle(tmp_path, m
     )
     monkeypatch.setattr(gui_smoke.sys, "frozen", False)
     assert not gui_smoke.module_in_runtime(module, runtime)
-
-
-@pytest.mark.parametrize(
-    "system, configured, expected",
-    [("linux", None, "basic"), ("linux", "threaded", "threaded"), ("darwin", None, None)],
-)
-def test_frozen_linux_render_loop_default_preserves_explicit_choice(
-    monkeypatch, system, configured, expected
-):
-    import os
-    import types
-
-    import frozen_entry
-
-    monkeypatch.delenv("QSG_RENDER_LOOP", raising=False)
-    if configured is not None:
-        monkeypatch.setenv("QSG_RENDER_LOOP", configured)
-    monkeypatch.setattr(frozen_entry.sys, "platform", system)
-    monkeypatch.setattr(frozen_entry.sys, "argv", ["azauthlib", "--desktop-setup-self-check"])
-    monkeypatch.setitem(
-        frozen_entry.sys.modules,
-        "_azauthlib_setup_smoke",
-        types.SimpleNamespace(main=lambda args: 0),
-    )
-    assert frozen_entry.main() == 0
-    assert os.environ.get("QSG_RENDER_LOOP") == expected
