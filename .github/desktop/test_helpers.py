@@ -172,3 +172,30 @@ def test_prepare_refuses_to_overwrite_an_existing_install(tmp_path, monkeypatch)
     with pytest.raises(SystemExit) as error:
         ci_prepare.main(["--artifacts", str(tmp_path)])
     assert error.value.code == 2
+
+
+@pytest.mark.parametrize("frozen", [False, True])
+def test_smoke_check_requires_module_inside_selected_runtime(tmp_path, monkeypatch, frozen):
+    import gui_smoke
+
+    runtime = tmp_path / "runtime"
+    monkeypatch.setattr(gui_smoke.sys, "frozen", frozen, raising=False)
+    assert gui_smoke.module_in_runtime(runtime / "azauthlib/__init__.pyc", runtime)
+    assert not gui_smoke.module_in_runtime(tmp_path / "checkout/azauthlib/__init__.py", runtime)
+
+
+def test_frozen_macos_smoke_accepts_resources_only_in_its_own_bundle(tmp_path, monkeypatch):
+    import gui_smoke
+
+    contents = tmp_path / "azauthlib.app/Contents"
+    runtime = contents / "Frameworks"
+    monkeypatch.setattr(gui_smoke.sys, "frozen", True, raising=False)
+    monkeypatch.setattr(gui_smoke.sys, "platform", "darwin")
+    monkeypatch.setattr(gui_smoke.sys, "executable", str(contents / "MacOS/azauthlib"))
+    module = contents / "Resources/azauthlib/__init__.pyc"
+    assert gui_smoke.module_in_runtime(module, runtime)
+    assert not gui_smoke.module_in_runtime(
+        tmp_path / "other.app/Contents/Resources/azauthlib/__init__.pyc", runtime
+    )
+    monkeypatch.setattr(gui_smoke.sys, "frozen", False)
+    assert not gui_smoke.module_in_runtime(module, runtime)

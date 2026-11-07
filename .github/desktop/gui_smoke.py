@@ -63,6 +63,17 @@ def find_item(parent, name):
     return None
 
 
+def module_in_runtime(module_file, installed):
+    runtime = installed.resolve()
+    roots = [runtime]
+    if getattr(sys, "frozen", False) and sys.platform == "darwin":
+        contents = Path(sys.executable).resolve().parent.parent
+        if contents.parent.suffix == ".app" and runtime == contents / "Frameworks":
+            # PyInstaller links package data from Frameworks into Resources on macOS.
+            roots.append(contents / "Resources")
+    return any(Path(module_file).resolve().is_relative_to(root) for root in roots)
+
+
 def run_checks(installed, artifacts, report):
     sys.path.insert(0, str(installed))
     import PySide6
@@ -78,7 +89,7 @@ def run_checks(installed, artifacts, report):
     from azauthlib.gui import config_app, connections, shortcuts
 
     require(
-        Path(azauthlib.__file__).resolve().is_relative_to(installed),
+        module_in_runtime(azauthlib.__file__, installed),
         "Smoke test imported source checkout instead of installed wheel",
     )
     expected_qpa = {"win32": "windows", "darwin": "cocoa"}.get(sys.platform, "xcb")
