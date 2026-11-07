@@ -5,7 +5,7 @@ recursive-include tests *.py
 exclude RELEASING.md
 global-exclude RELEASE_NOTES*.md *release-notes*.md
 prune .releases
-prune .local-tools
+prune .local
 prune assets/mascot
 prune assets/png/.archive
 prune .releases-process

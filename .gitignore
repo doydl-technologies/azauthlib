@@ -20,6 +20,7 @@ scripts/
 *.lock
 *.bin
 *.7z
+*-deprecated-[0-9]*
 Home.lnk
 
 # Local UI search tools, implementation notes, and archived/development assets.
@@ -60,7 +61,7 @@ release-notes/
 /assets/mascot/*-prompt.txt
 
 # Private maintainer previews and inspection tools.
-/.local-tools/
+/.local/
 
 # Local design concepts and historical UI references.
 /assets/mascot/
