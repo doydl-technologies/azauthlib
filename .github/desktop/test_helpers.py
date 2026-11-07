@@ -29,6 +29,29 @@ import ci_prepare
 import pytest
 
 
+def test_native_windows_build_does_not_collect_msys_runtime(monkeypatch, tmp_path):
+    import os
+
+    import build_standalone
+
+    root = tmp_path / "msys"
+    shell = root / "usr/bin"
+    shell.mkdir(parents=True)
+    (shell / "msys-2.0.dll").touch()
+    runtime = root / "ucrt64/bin"
+    runtime.mkdir(parents=True)
+    python = tmp_path / "native-python"
+    python.mkdir()
+    original = os.pathsep.join(map(str, (runtime, shell, python)))
+    monkeypatch.setenv("PATH", original)
+    monkeypatch.setattr(build_standalone.sys, "platform", "win32")
+    selected = build_standalone.native_build_environment()["PATH"].split(os.pathsep)
+    assert str(runtime) not in selected
+    assert str(shell) not in selected
+    assert str(python) not in selected
+    assert os.environ["PATH"] == original
+
+
 @pytest.mark.parametrize(
     "relative",
     [

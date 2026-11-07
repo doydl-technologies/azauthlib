@@ -57,15 +57,15 @@ def _safe_path(value) -> Path:
     return Path(text).expanduser().absolute()
 
 
-def _command(executable, launcher, system):
+def _command(executable, launcher, system, *, standalone=False):
     executable = _safe_path(executable or sys.executable)
     if system == "win32" and executable.name.lower() == "python.exe":
         windowless = executable.with_name("pythonw.exe")
         if windowless.is_file():
             executable = windowless
     if not executable.is_file():
-        raise ShortcutError("The current Python executable could not be found.")
-    if getattr(sys, "frozen", False):
+        raise ShortcutError("The application executable could not be found.")
+    if standalone or getattr(sys, "frozen", False):
         return (str(executable),)
     launcher = _safe_path(launcher or Path(__file__).with_name("launch.py"))
     if not launcher.is_file():
@@ -198,6 +198,7 @@ def create_app_shortcut(
     launcher=None,
     data_dir=None,
     applications_dir=None,
+    standalone=False,
 ) -> ShortcutResult:
     """Create launchers only after an explicit request, without replacing existing items.
 
@@ -208,7 +209,12 @@ def create_app_shortcut(
     system = system or sys.platform
     if system not in {"win32", "darwin"} and not system.startswith("linux"):
         raise ShortcutError("App shortcuts are not supported on this operating system.")
-    command = _command(executable, launcher, system)
+    command = _command(executable, launcher, system, standalone=standalone)
+    dependency = (
+        "Keep the standalone application installed at this location."
+        if standalone or getattr(sys, "frozen", False)
+        else "It requires this Python environment to remain installed."
+    )
     desktop = _safe_path(desktop_dir) if desktop_dir else None
     if desktop is not None and (desktop == Path.home().absolute() or not desktop.is_dir()):
         desktop = None
@@ -226,7 +232,7 @@ def create_app_shortcut(
             return ShortcutResult(
                 (destination,),
                 "azauthlib.app was created on your Desktop. Open it in Finder or add it to "
-                "the Dock. It requires this Python environment to remain installed.",
+                f"the Dock. {dependency}",
             )
         if system == "win32":
             destination = desktop / "azauthlib.lnk"
@@ -240,8 +246,7 @@ def create_app_shortcut(
                 _write_new(destination, link.read_bytes(), created)
             return ShortcutResult(
                 (destination,),
-                "The azauthlib shortcut was created on your Desktop. It requires this "
-                "Python environment to remain installed.",
+                f"The azauthlib shortcut was created on your Desktop. {dependency}",
             )
         applications = _safe_path(applications_dir or user_data_path() / "applications")
         destinations = [applications / "doydl-azauthlib.desktop"]
@@ -255,10 +260,7 @@ def create_app_shortcut(
         applications.mkdir(mode=0o700, parents=True, exist_ok=True)
         for destination in destinations:
             _write_new(destination, entry, created, 0o755)
-        note = (
-            "azauthlib was added to your applications menu. "
-            "It requires this Python environment to remain installed."
-        )
+        note = f"azauthlib was added to your applications menu. {dependency}"
         if desktop is not None:
             note += " A Desktop copy was also created; your desktop may ask you to allow launching."
         return ShortcutResult(tuple(destinations), note)

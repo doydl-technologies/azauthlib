@@ -166,6 +166,9 @@ class ConfigurationController(QObject):
     appearanceChanged = Signal()
     startupPreferencesChanged = Signal()
     preferencesErrorChanged = Signal()
+    preferencesSavingChanged = Signal()
+    preferencesSaveFinished = Signal(bool)
+    _preferencesWritten = Signal(object, object, str)
     warmStartStatusChanged = Signal()
     _warmCachePrepared = Signal(int, bool)
     zoomChanged = Signal()
@@ -197,6 +200,8 @@ class ConfigurationController(QObject):
             directory=profiles.get_config_dir(create=False)
         )
         self._preferences_error = ""
+        self._preferences_saving = False
+        self._preferencesWritten.connect(self._finish_preferences_save)
         self._warm_cache_job = 0
         self._warm_cache_cancel = Event()
         self._warm_start_status = "idle"
@@ -375,9 +380,6 @@ class ConfigurationController(QObject):
         self, accent, show_info, service_animation, warm_start, adaptive_splash, launch_at_login
     ):
         """One Settings transaction, including reversible user login registration."""
-        from .login_startup import apply_login_startup
-        from .shortcuts import ShortcutError
-
         self._preferences_error = ""
         self.preferencesErrorChanged.emit()
         startup = {
@@ -385,6 +387,8 @@ class ConfigurationController(QObject):
             "adaptive_splash": adaptive_splash,
             "launch_at_login": launch_at_login,
         }
+        if self._preferences_saving:
+            return False
         if startup == self._startup_preferences:
             return self.saveAppearancePreferences(accent, show_info, service_animation)
         if (
@@ -397,20 +401,41 @@ class ConfigurationController(QObject):
             or (self._connections_loading and not self._connection_background)
         ):
             return False
+        appearance, error = self._write_settings(
+            accent,
+            show_info,
+            service_animation,
+            startup,
+            dict(self._startup_preferences),
+            profiles.get_config_dir(create=False),
+        )
+        if error:
+            self._preferences_error = error
+            self.preferencesErrorChanged.emit()
+            return False
+        self._apply_preferences(startup, appearance)
+        return True
+
+    @staticmethod
+    def _write_settings(accent, show_info, service_animation, startup, previous, directory):
+        """Perform the reversible disk/login transaction without accessing QObjects."""
+        from .login_startup import apply_login_startup
+        from .shortcuts import ShortcutError
+
         rollback = None
         try:
-            if launch_at_login != self._startup_preferences["launch_at_login"]:
-                rollback = apply_login_startup(launch_at_login)
+            if startup["launch_at_login"] != previous["launch_at_login"]:
+                rollback = apply_login_startup(startup["launch_at_login"])
             if not save_settings_preferences(
                 accent,
                 show_info,
                 service_animation,
                 startup,
-                directory=profiles.get_config_dir(create=False),
+                directory=directory,
             ):
                 raise OSError("Preferences could not be saved")
         except (OSError, RuntimeError, ValueError, ShortcutError):
-            self._preferences_error = (
+            error = (
                 "Preferences could not be saved. Check that the app is still installed "
                 "in this location and that your account can change login-startup settings."
             )
@@ -418,25 +443,83 @@ class ConfigurationController(QObject):
                 try:
                     rollback()
                 except (OSError, RuntimeError):
-                    self._preferences_error += (
+                    error += (
                         " The login-startup change could not be undone. "
                         "Check your operating system's startup-app settings."
                     )
-            self.preferencesErrorChanged.emit()
-            return False
+            return None, error
+        return load_appearance_preferences(directory=directory), ""
+
+    def _apply_preferences(self, startup, appearance):
         if startup["warm_start"] != self._startup_preferences["warm_start"]:
             self._background_services_attempted.clear()
         self._startup_preferences = startup
         if not startup["warm_start"]:
             self.discardBackgroundConnections()
-        self._appearance_preferences = load_appearance_preferences(
-            directory=profiles.get_config_dir(create=False)
-        )
+        self._appearance_preferences = appearance
         self.startupPreferencesChanged.emit()
         self.serviceWarmupChanged.emit()
         self.appearanceChanged.emit()
         self._prepare_warm_cache()
+
+    @Property(bool, notify=preferencesSavingChanged)
+    def preferencesSaving(self):
+        return self._preferences_saving
+
+    @Slot(str, bool, str, bool, bool, bool, result=bool)
+    def beginSavePreferences(
+        self, accent, show_info, service_animation, warm_start, adaptive_splash, launch_at_login
+    ):
+        if (
+            self._preferences_saving
+            or self._connection_manager.editing
+            or self._connection_manager.testing
+            or (self._connections_loading and not self._connection_background)
+            or accent not in ACCENT_PRESETS
+            or type(show_info) is not bool
+            or service_animation not in SERVICE_ANIMATIONS
+            or any(
+                type(value) is not bool for value in (warm_start, adaptive_splash, launch_at_login)
+            )
+        ):
+            return False
+        startup = dict(
+            warm_start=warm_start, adaptive_splash=adaptive_splash, launch_at_login=launch_at_login
+        )
+        previous = dict(self._startup_preferences)
+        directory = profiles.get_config_dir(create=False)
+        self._preferences_saving = True
+        self._preferences_error = ""
+        self.preferencesErrorChanged.emit()
+        self.preferencesSavingChanged.emit()
+
+        def write():
+            try:
+                appearance, error = self._write_settings(
+                    accent, show_info, service_animation, startup, previous, directory
+                )
+            except Exception:
+                appearance, error = None, "Preferences could not be saved. Please try again."
+            with suppress(RuntimeError):
+                self._preferencesWritten.emit(startup, appearance, error)
+
+        try:
+            Thread(target=write, daemon=True, name="azauthlib-save-preferences").start()
+        except (OSError, RuntimeError):
+            self._finish_preferences_save(
+                startup, None, "Unable to start saving. Please try again."
+            )
         return True
+
+    @Slot(object, object, str)
+    def _finish_preferences_save(self, startup, appearance, error):
+        if not error:
+            self._apply_preferences(startup, appearance)
+        self._preferences_error = error
+        self._preferences_saving = False
+        self.preferencesErrorChanged.emit()
+        self.preferencesSavingChanged.emit()
+        self.preferencesSaveFinished.emit(not bool(error))
 
     @Slot(str, bool, result=bool)
     @Slot(str, bool, str, result=bool)
@@ -444,7 +527,8 @@ class ConfigurationController(QObject):
         self, accent: str, show_info: bool, service_animation=None
     ) -> bool:
         if (
-            self._connection_manager.editing
+            self._preferences_saving
+            or self._connection_manager.editing
             or self._connection_manager.testing
             or (self._connections_loading and not self._connection_background)
         ):

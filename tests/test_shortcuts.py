@@ -224,6 +224,14 @@ def test_frozen_launcher_has_no_python_script(monkeypatch, launcher_paths):
     assert command == (str(launcher_paths["executable"]),)
 
 
+def test_standalone_target_does_not_depend_on_installers_python(launcher_paths):
+    result = shortcuts.create_app_shortcut(system="linux", standalone=True, **launcher_paths)
+    content = result.paths[0].read_text(encoding="utf-8")
+    assert "app launcher.py" not in content
+    assert "Python environment" not in result.message
+    assert "standalone application" in result.message
+
+
 @pytest.mark.skipif(sys.platform != "win32", reason="Native Windows COM verification")
 def test_native_windows_link_properties_round_trip(launcher_paths):
     from azauthlib.gui.windows_shortcuts import _call

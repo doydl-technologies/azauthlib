@@ -62,6 +62,7 @@ Changelog = "https://github.com/doydl-technologies/azauthlib/blob/main/CHANGELOG
 
 [project.scripts]
 azauthlib-app = "azauthlib.gui.config_app:main"
+azauthlib-install-desktop = "azauthlib.gui.desktop_install:main"
 
 [tool.setuptools.dynamic]
 version = { attr = "azauthlib.__version__" }

@@ -175,6 +175,10 @@ ApplicationWindow {
     }
     Component.onDestruction: AccentTheme.controller = null
     onClosing: event => {
+        if (settingsDialog.saving || window.appController.preferencesSaving) {
+            event.accepted = false
+            return
+        }
         window.appController.cancelConnectionPreparation()
         serviceSelection.reset()
         if (!closingAllowed) {

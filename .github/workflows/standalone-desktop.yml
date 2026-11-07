@@ -1,0 +1,146 @@
+name: Build standalone desktop bundles
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Standalone / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-2025, macos-15, macos-15-intel, ubuntu-22.04]
+    env:
+      PYTHONUNBUFFERED: '1'
+      QT_QUICK_CONTROLS_STYLE: Basic
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.13'
+          cache: pip
+      - name: Install native Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb xauth libegl1 libgl1 libgl1-mesa-dri \
+            libx11-xcb1 libxi6 libxrender1 libxkbcommon0 libxkbcommon-x11-0 \
+            libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 \
+            libxcb-render0 libxcb-render-util0 libxcb-shape0 libxcb-shm0 \
+            libxcb-randr0 libxcb-sync1 libxcb-xfixes0 libxcb-xinerama0 \
+            libxcb-xinput0 libxcb-xkb1
+      - run: python -m pip install build "pyinstaller>=6.22.1,<7"
+      - run: python -m build --wheel
+      - name: Install the regular wheel for freezing
+        shell: bash
+        run: python -m pip install dist/*.whl
+      - name: Test setup wizard and build helpers
+        run: |
+          python -m pip install pytest
+          python -m pytest -q -o addopts= .github/desktop/test_helpers.py .github/desktop/test_setup_wizard.py .github/desktop/test_windows_installer.py .github/desktop/test_qt_resources.py
+      - name: Build and check native Windows/macOS app
+        if: runner.os != 'Linux'
+        run: python .github/desktop/build_standalone.py --output standalone
+      - name: Build and check native Linux app
+        if: runner.os == 'Linux'
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          QSG_RHI_BACKEND: opengl
+        run: xvfb-run -a -s "-screen 0 1600x1000x24" python .github/desktop/build_standalone.py --output standalone
+      - uses: msys2/setup-msys2@ec48f7c5447b3140e2b088413ae3a55687bccb6e # v2
+        if: runner.os == 'Windows'
+        with:
+          msystem: UCRT64
+          install: mingw-w64-ucrt-x86_64-gcc
+      - name: Prepare pinned MSI build tools
+        if: runner.os == 'Windows'
+        shell: python
+        run: |
+          import hashlib, pathlib, subprocess, urllib.request
+          folder = pathlib.Path('standalone/wix-tools')
+          folder.mkdir()
+          archive = folder / 'wix.7z'
+          url = 'https://github.com/electron-userland/electron-builder-binaries/releases/download/wix-4.0.0.5512.2/wix-4.0.0.5512.2.7z'
+          urllib.request.urlretrieve(url, archive)
+          if hashlib.sha256(archive.read_bytes()).hexdigest() != 'fe677fcd837b18c9b912985d91636bbd8a1e800c3b3a6a841b6f96e89624e839':
+              raise SystemExit('MSI build-tool checksum mismatch')
+          subprocess.run([r'C:\Program Files\7-Zip\7z.exe', 'x', str(archive), '-o' + str(folder)], check=True)
+      - name: Build automatic Windows MSI installer and test transactions
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: |
+          export MSYS2_ARG_CONV_EXCL='*'
+          export MSYS2_UCRT64_BIN="$(cygpath -m /ucrt64/bin)"
+          export WIX_BIN="$(cygpath -m "$GITHUB_WORKSPACE/standalone/wix-tools")"
+          native_python="$(cygpath -u "$pythonLocation")/python.exe"
+          "$native_python" -m pytest -q -o addopts= .github/desktop/test_windows_installer.py
+          "$native_python" .github/desktop/build_windows_installer.py --payload standalone/dist/azauthlib --output standalone/windows-installer
+          "$native_python" .github/desktop/windows_installer_smoke.py --output standalone/msi-tests --wix-bin "$WIX_BIN"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: standalone-${{ matrix.os }}
+          path: |
+            standalone/azauthlib-desktop-*.zip
+            standalone/azauthlib-desktop-*.tar.gz
+            standalone/*.sha256
+            standalone/frozen-check/
+            standalone/qt-resource-report.json
+            standalone/setup-check/setup-report.json
+            standalone/setup-check/setup-*.png
+            standalone/windows-installer/*-setup.exe
+            standalone/windows-installer/*.msi
+            standalone/windows-installer/*-setup.exe.sha256
+            standalone/windows-installer/*.msi.sha256
+            standalone/windows-installer/installer-preview*.png
+            standalone/windows-installer/build-report.json
+            standalone/msi-tests/report.json
+            standalone/msi-tests/step-*.log
+          if-no-files-found: warn
+
+  checksums:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: standalone-*
+          merge-multiple: true
+          path: bundles
+      - name: Assemble release checksums
+        run: |
+          python - <<'PY'
+          import hashlib, shutil
+          from pathlib import Path
+
+          folder = Path('bundles')
+          checksums = sorted(folder.rglob('*.sha256'))
+          if len(checksums) != 6:
+              raise SystemExit('Expected four native bundles plus Windows MSI and setup EXE')
+          lines = []
+          for checksum in checksums:
+              digest, name = checksum.read_text().split()
+              source = checksum.parent / name
+              actual = hashlib.sha256(source.read_bytes()).hexdigest()
+              if digest != actual:
+                  raise SystemExit('Desktop checksum mismatch: ' + name)
+              lines.append(digest + '  ' + name + '\n')
+              if source != folder / name:
+                  shutil.copy2(source, folder / name)
+          (folder / 'SHA256SUMS-desktop.txt').write_text(''.join(lines), encoding='utf-8')
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: desktop-release-bundles
+          path: |
+            bundles/azauthlib-desktop-*.zip
+            bundles/azauthlib-desktop-*.tar.gz
+            bundles/SHA256SUMS-desktop.txt
+            bundles/*-setup.exe
+            bundles/*.msi
+          if-no-files-found: error

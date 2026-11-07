@@ -10,6 +10,7 @@ __pycache__/
 build/
 dist/
 .artifacts/
+.test_scripts/
 /.github/release-notes/
 htmlcov/
 scripts/
@@ -19,6 +20,7 @@ scripts/
 *.lock
 *.bin
 *.7z
+Home.lnk
 
 # Local UI search tools, implementation notes, and archived/development assets.
 /src/azauthlib/gui/qml/_Search-Qml.cmd-
@@ -55,3 +57,4 @@ RELEASE_NOTES*.md
 release-notes/
 .releases/
 .releases-process/
+/assets/mascot/*-prompt.txt

@@ -27,6 +27,7 @@ Popup {
     ]
     property string saveError: ""
     property bool saveConfirmationPending: false
+    property bool saving: false
     signal preferencesSaved()
     property int openFadeDuration: 400
     property int openScaleDuration: 500
@@ -46,7 +47,30 @@ Popup {
     modal: true
     focus: true
     popupType: Popup.Item
-    closePolicy: Popup.CloseOnEscape
+    closePolicy: saving ? Popup.NoAutoClose : Popup.CloseOnEscape
+    Timer {
+        id: beginSave
+        // Present feedback before persistence or a coordinated theme update starts.
+        interval: 80
+        onTriggered: {
+            if (!root.appController.beginSavePreferences(root.draftAccent, root.draftShowInfo,
+                    root.draftServiceAnimation, root.draftWarmStart,
+                    root.draftAdaptiveSplash, root.draftLaunchAtLogin)) {
+                root.saving = false
+                root.saveError = "Preferences could not be saved. Please try again."
+            }
+        }
+    }
+    Connections {
+        target: root.appController
+        function onPreferencesSaveFinished(success) {
+            root.saving = false
+            if (success) {
+                root.saveConfirmationPending = true
+                root.close()
+            } else root.saveError = root.appController.preferencesError || "Preferences could not be saved. Please try again."
+        }
+    }
     function openSettings(trigger) { returnFocusItem = trigger || null; open() }
     onAboutToShow: {
         draftAccent = appController.appearancePreferences.accent
@@ -134,7 +158,10 @@ Popup {
         }
     }
 
-    contentItem: ColumnLayout {
+    contentItem: Item {
+    ColumnLayout {
+        anchors.fill: parent
+        enabled: !root.saving
         spacing: 16
         RowLayout {
             Layout.fillWidth: true
@@ -143,6 +170,7 @@ Popup {
             Heading { text: "Settings"; font.pixelSize: 27; Layout.fillWidth: true }
             ConnectionButton {
                 id: closeButton
+                enabled: !root.saving
                 objectName: "settingsCloseButton"
                 symbol: "x"; text: ""; padding: 10
                 implicitWidth: 44; implicitHeight: 44
@@ -517,6 +545,7 @@ Popup {
             Layout.fillWidth: true; spacing: 12
             ConnectionButton {
                 objectName: "settingsResetButton"
+                enabled: !root.saving
                 text: "Reset to default"; iconSource: Qt.resolvedUrl("../../../assets/icons/svg/actions/power-reset.svg")
                 iconSize: 18; iconTextSpacing: 8; implicitHeight: 42
                 onClicked: {
@@ -535,24 +564,58 @@ Popup {
             Item { Layout.fillWidth: true }
             ConnectionButton {
                 objectName: "settingsCancelButton"
+                enabled: !root.saving
                 text: "Cancel"; variant: "cancel"; implicitWidth: 110; implicitHeight: 42
                 onClicked: root.close()
             }
             ConnectionButton {
                 objectName: "settingsSaveButton"
-                text: "Save preferences"; variant: "primary"
+                text: root.saving ? "Saving…" : "Save preferences"; variant: "primary"
                 iconSource: Qt.resolvedUrl("../../../assets/icons/svg/actions/save.svg")
                 iconSize: 18; implicitHeight: 42
-                enabled: root.dirty && !root.saveConfirmationPending
+                enabled: root.dirty && !root.saveConfirmationPending && !root.saving
                 onClicked: {
                     if (!enabled) return
-                    if (root.appController.savePreferences(root.draftAccent, root.draftShowInfo, root.draftServiceAnimation,
-                            root.draftWarmStart, root.draftAdaptiveSplash, root.draftLaunchAtLogin)) {
-                        root.saveConfirmationPending = true
-                        root.close()
-                    } else root.saveError = root.appController.preferencesError || "Preferences could not be saved. Check folder permissions and try again."
+                    root.saveError = ""
+                    root.saving = true
+                    beginSave.start()
                 }
             }
         }
+    }
+    Rectangle {
+        objectName: "settingsSavingOverlay"
+        anchors.fill: parent
+        z: 100
+        visible: root.saving
+        radius: 16
+        color: "#ee0b2238"
+        border.color: "#386484"
+        MouseArea { anchors.fill: parent }
+        Column {
+            anchors.centerIn: parent
+            spacing: 16
+            BusyIndicator {
+                anchors.horizontalCenter: parent.horizontalCenter
+                width: 54; height: 54
+                palette.dark: "#56d7ef"
+                running: root.saving && !ConnectionTheme.reducedMotion
+                visible: !ConnectionTheme.reducedMotion
+            }
+            Text {
+                text: "Saving preferences…"
+                color: ConnectionTheme.text
+                font.family: ConnectionTheme.heading
+                font.pixelSize: 22; font.bold: true
+                Accessible.role: Accessible.StaticText
+                Accessible.name: text
+            }
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: "Applying your settings securely."
+                color: "#a8c3df"; font.family: ConnectionTheme.body; font.pixelSize: 13
+            }
+        }
+    }
     }
 }

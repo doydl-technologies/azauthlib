@@ -188,7 +188,61 @@ def test_footer_settings_switches_one_original_image_instantly(monkeypatch):
         QTest.mouseClick(main, Qt.LeftButton, Qt.NoModifier, position)
         assert spy.count() == 5
         controller.connectionManager.cancelEdit()
-        QTest.qWait(100)
+        # Saving stays visible and non-reentrant while the disk transaction runs.
+        from threading import Event
+
+        release_save = Event()
+        original_save = config_app.save_settings_preferences
+
+        def delayed_save(*args, **kwargs):
+            if not release_save.wait(5):
+                raise OSError("Test did not release the preference writer")
+            return original_save(*args, **kwargs)
+
+        monkeypatch.setattr(config_app, "save_settings_preferences", delayed_save)
+        QMetaObject.invokeMethod(main, "settingsRequested")
+        wait_for(lambda: dialog.property("opened"))
+        dialog.setProperty("draftAccent", "teal")
+        save_settings = main.findChild(QObject, "settingsSaveButton")
+        completion = QSignalSpy(controller.preferencesSaveFinished)
+        QMetaObject.invokeMethod(save_settings, "clicked")
+        try:
+            assert dialog.property("saving")
+            assert not save_settings.property("enabled")
+            wait_for(lambda: controller.preferencesSaving)
+            assert not controller.beginSavePreferences("pink", True, "group", False, False, False)
+            overlay = main.findChild(QObject, "settingsSavingOverlay")
+            assert overlay.property("visible")
+            QTest.qWait(180)
+            if os.environ.get("AZAUTHLIB_CAPTURE_SETTINGS"):
+                directory = Path(__file__).resolve().parents[1] / ".artifacts" / "settings-gear"
+                directory.mkdir(parents=True, exist_ok=True)
+                assert main.grabWindow().save(str(directory / "saving-preferences.png"))
+            main.close()
+            assert main.isVisible()
+        finally:
+            release_save.set()
+        wait_for(lambda: completion.count() == 1)
+        wait_for(lambda: not dialog.property("visible"))
+        assert completion.at(0) == [True]
+        assert controller.appearancePreferences["accent"] == "teal"
+
+        # A failed write leaves the settings dialog open with the draft intact.
+        monkeypatch.setattr(config_app, "save_settings_preferences", lambda *a, **kw: False)
+        QTest.qWait(650)
+        QMetaObject.invokeMethod(main, "settingsRequested")
+        wait_for(lambda: dialog.property("opened"))
+        dialog.setProperty("draftAccent", "purple")
+        QMetaObject.invokeMethod(save_settings, "clicked")
+        wait_for(lambda: completion.count() == 2)
+        assert completion.at(1) == [False]
+        assert dialog.property("visible")
+        assert not dialog.property("saving")
+        assert dialog.property("draftAccent") == "purple"
+        assert dialog.property("saveError")
+        assert controller.appearancePreferences["accent"] == "teal"
+        QMetaObject.invokeMethod(dialog, "close")
+        wait_for(lambda: not dialog.property("visible"))
         assert button.isEnabled()
         controller.connectionManager.beginAdd()
         QTest.qWait(100)
@@ -207,3 +261,24 @@ def test_footer_settings_switches_one_original_image_instantly(monkeypatch):
         QTest.qWait(100)
         resources.close()
     assert not warnings, warnings
+
+
+def test_failed_preference_transaction_rolls_back_login_registration(monkeypatch, tmp_path):
+    from azauthlib.gui import login_startup
+
+    changes = []
+
+    def registration(enabled):
+        changes.append(enabled)
+        return lambda: changes.append("rolled back")
+
+    monkeypatch.setattr(login_startup, "apply_login_startup", registration)
+    monkeypatch.setattr(config_app, "save_settings_preferences", lambda *a, **kw: False)
+    previous = dict(warm_start=False, adaptive_splash=False, launch_at_login=False)
+    requested = {**previous, "launch_at_login": True}
+    appearance, error = config_app.ConfigurationController._write_settings(
+        "teal", True, "group", requested, previous, tmp_path
+    )
+    assert appearance is None
+    assert error
+    assert changes == [True, "rolled back"]

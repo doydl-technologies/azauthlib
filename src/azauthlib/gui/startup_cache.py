@@ -42,7 +42,11 @@ def _identity(resources):
         resources.path("assets", "docs", "legal", name)
         for name in (*POLICY_FILES.values(), "INDEPENDENCE_AND_NOTICES.md")
     ]
-    paths.extend((Path(__file__), Path(__file__).with_name("legal_terms.py")))
+    paths.extend(
+        (Path(sys.executable),)
+        if getattr(sys, "frozen", False)
+        else (Path(__file__), Path(__file__).with_name("legal_terms.py"))
+    )
     stamps = [(str(path.resolve()), path.stat().st_mtime_ns, path.stat().st_size) for path in paths]
     return hashlib.sha256(repr((SCHEMA, sys.version, stamps)).encode()).hexdigest()
 
@@ -97,7 +101,12 @@ def save_shared_content(resources, documents, about, *, directory=None):
 
 
 def _image_path(source, key):
-    renderer = Path(__file__).with_name("svg_images.py").stat()
+    # Frozen Python modules live in an archive, not alongside their synthetic __file__.
+    renderer = (
+        Path(sys.executable)
+        if getattr(sys, "frozen", False)
+        else Path(__file__).with_name("svg_images.py")
+    ).stat()
     identity = repr((SCHEMA, str(source.resolve()), key, renderer.st_mtime_ns, renderer.st_size))
     name = hashlib.sha256(identity.encode()).hexdigest() + ".png"
     return get_cache_dir() / "startup-service-images" / name
