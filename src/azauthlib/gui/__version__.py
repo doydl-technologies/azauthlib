@@ -18,4 +18,4 @@
 # limitations under the License.
 #
 
-APP_VERSION = "v6.0.1"
+APP_VERSION = "v6.0.2"

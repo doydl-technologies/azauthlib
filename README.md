@@ -20,28 +20,36 @@
   <a href="https://doydl.studio"><img src="https://img.shields.io/badge/Powered%20by-DOYDL%20Technologies-blue" alt="Powered by DOYDL Technologies"></a>
 </p>
 
-## Table of contents
+> **🚀 Quick path:** [Set up a Microsoft Entra app](#before-you-start) → [Install azauthlib](#installation) → [Configure a connection](#desktop-application) → [Use it in Python](#use-your-saved-connection-in-python).
+>
+> **🔒 Security first:** Keep access tokens, client secrets, passwords, and private keys out of source code and issue reports.
 
-- [What azauthlib does](#what-azauthlib-does)
-- [Before you start](#before-you-start)
-- [Features](#features)
-- [Installation](#installation)
-- [Desktop application](#desktop-application)
-- [Desktop walkthrough with screenshots](#desktop-walkthrough-with-screenshots)
-- [Use your saved connection in Python](#use-your-saved-connection-in-python)
-- [Public-client authentication](#public-client-authentication)
-- [Device-code authentication](#device-code-authentication)
-- [Client-credentials authentication](#client-credentials-authentication)
-- [Certificate authentication](docs/certificate-authentication.md)
-- [Configuration](#configuration)
-- [Upgrading from 1.4.0b1](#upgrading-from-140b1)
-- [Token-cache security](#token-cache-security)
-- [Error handling](#error-handling)
-- [Common setup problems](#common-setup-problems)
-- [Development](#development)
-- [License](#license)
+---
 
-## What azauthlib does
+## 🧭 Table of contents
+
+- 🔐 [What azauthlib does](#what-azauthlib-does)
+- ✅ [Before you start](#before-you-start)
+- ✨ [Features](#features)
+- 📦 [Installation](#installation)
+- 🖥️ [Desktop application](#desktop-application)
+- 📸 [Desktop walkthrough with screenshots](#desktop-walkthrough-with-screenshots)
+- 🐍 [Use your saved connection in Python](#use-your-saved-connection-in-python)
+- 👤 [Public-client authentication](#public-client-authentication)
+- 📱 [Device-code authentication](#device-code-authentication)
+- 🤖 [Client-credentials authentication](#client-credentials-authentication)
+- 📜 [Certificate authentication](docs/certificate-authentication.md)
+- ⚙️ [Configuration](#configuration)
+- 🔄 [Upgrading from 1.4.0b1](#upgrading-from-140b1)
+- 🛡️ [Token-cache security](#token-cache-security)
+- 🚨 [Error handling](#error-handling)
+- 🧩 [Common setup problems](#common-setup-problems)
+- 👩‍💻 [Development](#development)
+- ⚖️ [License](#license)
+
+<a id="what-azauthlib-does"></a>
+
+## 🔐 What azauthlib does
 
 azauthlib helps a Python program sign in to Microsoft services and obtain an **access token**.
 A token is a temporary credential that your program sends with an API request. For example,
@@ -52,28 +60,34 @@ The library wraps Microsoft's MSAL authentication library and adds local connect
 credential storage and encrypted token-cache persistence. The optional desktop application
 lets you enter and manage those settings through forms instead of writing configuration code.
 
-There are two parts you can use:
+**🧰 Two ways to use azauthlib:**
 
 | Part | What you use it for |
 | --- | --- |
-| **Python library** | Request tokens from your Python code, reuse cached sign-ins, and authenticate API calls. |
-| **Desktop application** | Add, edit, organize and test local connection profiles; choose an active connection; manage certificate settings. |
+| 🐍 **Python library** | Request tokens from your Python code, reuse cached sign-ins, and authenticate API calls. |
+| 🖥️ **Desktop application** | Add, edit, organize and test local connection profiles; choose an active connection; manage certificate settings. |
 
-The usual path is **register an app in Microsoft Entra → save its settings → acquire a token
+**🧭 Typical workflow:** **register an app in Microsoft Entra → save its settings → acquire a token
 with azauthlib → call the API from your code**. azauthlib does not register an Entra application,
 grant Microsoft permissions or make Graph data requests on your behalf. You or your
 organization must configure those permissions, and your code or an API SDK makes the requests.
 
-The desktop currently enables **Microsoft Graph**. The other service cards are previews.
+> [!NOTE]
+> **🧭 Current desktop support:** The desktop currently enables **Microsoft Graph**. The other service cards are previews.
+
 Saving a connection is optional: the Python library also accepts configuration directly or
 through environment variables.
 
-## Before you start
+<a id="before-you-start"></a>
+
+## ✅ Before you start
 
 You need Python **3.10 or newer**, access to the Microsoft account/organization you want to
 use, and a Microsoft Entra app registration configured for your task. If your organization
 restricts app registrations or consent, ask its administrator for the correct registration
 and permissions. Installing azauthlib alone does not provide Microsoft service access.
+
+### 📖 Key terms
 
 These terms appear in the forms and examples:
 
@@ -86,14 +100,16 @@ These terms appear in the forms and examples:
 | **Client secret value** | A confidential credential for app-only authentication. Use the secret's **value**, not its identifier. |
 | **Certificate / private key** | A credential pair for app-only authentication. Entra receives the public certificate; the private key stays local. |
 
+### 🔑 Choose an authentication method
+
 Choose the method that matches how your program will run:
 
 | Method | Who signs in? | Typical use |
 | --- | --- | --- |
-| **Interactive** | A user signs in through a browser. | A script or desktop tool that you run yourself. A good starting point for user-based access. |
-| **Device code** | A user enters a short code on Microsoft's sign-in page. | A terminal/session where entering a code in a separate browser is convenient. |
-| **Client secret** | The application authenticates without a user. | An unattended task whose registration has the required application permissions and consent. |
-| **Certificate** | The application authenticates using a private key. | An unattended task using certificate credentials instead of a shared client secret. |
+| 👤 **Interactive** | A user signs in through a browser. | A script or desktop tool that you run yourself. A good starting point for user-based access. |
+| 📱 **Device code** | A user enters a short code on Microsoft's sign-in page. | A terminal/session where entering a code in a separate browser is convenient. |
+| 🔐 **Client secret** | The application authenticates without a user. | An unattended task whose registration has the required application permissions and consent. |
+| 📜 **Certificate** | The application authenticates using a private key. | An unattended task using certificate credentials instead of a shared client secret. |
 
 Interactive and device-code sign-ins use **delegated permissions**: the app acts for a signed-in
 user. Secrets and certificates use **application permissions**: the app acts as itself.
@@ -106,24 +122,32 @@ application permissions and administrator consent. See Microsoft's
 [public and confidential client guidance](https://learn.microsoft.com/en-us/entra/msal/python/getting-started/client-applications)
 and [permissions and consent guidance](https://learn.microsoft.com/en-us/entra/identity-platform/consent-types-developer).
 
-## Features
+<a id="features"></a>
 
-- Interactive, silent, device-code, and client-credentials authentication.
-- Encrypted, cross-process-safe token persistence through MSAL Extensions.
-- Client secrets stored in the operating-system credential manager.
-- PFX/P12 and PEM certificate credentials, with GUI creation (90-day default), local validation and optional
+## ✨ Features
+
+- 🔑 Interactive, silent, device-code, and client-credentials authentication.
+- 🛡️ Encrypted, cross-process-safe token persistence through MSAL Extensions.
+- 🔒 Client secrets stored in the operating-system credential manager.
+- 📜 PFX/P12 and PEM certificate credentials, with GUI creation (90-day default), local validation and optional
   profile-scoped password storage. See [Certificate authentication](docs/certificate-authentication.md).
-- Exact-path `.env` loading; no upward directory search.
-- Delegated and application scope handling kept separate.
-- No filesystem writes or global logging configuration during import.
+- 📁 Exact-path `.env` loading; no upward directory search.
+- 🔀 Delegated and application scope handling kept separate.
+- ✅ No filesystem writes or global logging configuration during import.
 
-## Installation
+<a id="installation"></a>
+
+## 📦 Installation
+
+### 1️⃣ Create a virtual environment
 
 Use a virtual environment for your project so its packages are separate from other projects:
 
 ```bash
 python -m venv .venv
 ```
+
+### 2️⃣ Activate the environment
 
 Activate it using the command for your terminal:
 
@@ -133,11 +157,15 @@ Activate it using the command for your terminal:
 | Windows, PowerShell | `.\.venv\Scripts\Activate.ps1` |
 | macOS or Linux shell | `source .venv/bin/activate` |
 
+### 3️⃣ Install azauthlib
+
 Then install the library:
 
 ```bash
 python -m pip install azauthlib
 ```
+
+### 4️⃣ Optional: Configure your connection with the desktop app
 
 **Optional first-time setup:** To configure your connections using a graphical interface,
 run the following command in the environment where azauthlib is installed:
@@ -149,6 +177,8 @@ azauthlib-app
 The GUI is optional. You can instead configure credentials through Python or environment
 variables, as shown below. See [Desktop application](#desktop-application) for more details.
 
+### 📁 Alternative: Install from source
+
 From a source checkout:
 
 ```bash
@@ -159,7 +189,9 @@ python -m pip install .
 
 Python 3.10 or newer is required.
 
-## Desktop application
+<a id="desktop-application"></a>
+
+## 🖥️ Desktop application
 
 Open the application from a terminal in the environment where azauthlib is installed:
 
@@ -187,7 +219,7 @@ same location. If it moves, remove the old launcher and create another from the 
 See [Startup preferences](docs/startup-behavior.md) for optional faster repeat launches,
 splash-screen behavior and opening the app at login.
 
-### Optional standalone desktop installation
+### 📥 Optional standalone desktop installation
 
 For releases that include standalone desktop bundles, the optional setup command is:
 
@@ -215,16 +247,19 @@ reported without installing anything. The existing `azauthlib-app` command remai
 See [Standalone desktop setup](docs/standalone-desktop.md) for availability, options,
 supported build targets and release requirements.
 
-## Desktop walkthrough with screenshots
+<a id="desktop-walkthrough-with-screenshots"></a>
+
+## 📸 Desktop walkthrough with screenshots
 
 This walkthrough starts with a user-based **Interactive** connection. Follow the alternative
 method sections only when your task needs them. All example tenant/client IDs, profile names
 and certificate locations shown here are placeholders; replace them with your own settings.
-The testing screenshots marked **demo** are simulated UI examples, not evidence of a live
-Microsoft sign-in. Browser screens are references and may look different for your tenant.
+> [!IMPORTANT]
+> **🧪 Screenshot disclaimer:** The testing screenshots marked **demo** are simulated UI examples, not evidence of a live
+> Microsoft sign-in. Browser screens are references and may look different for your tenant.
 
 <details>
-<summary><strong>Optional standalone Windows installer: installing, completion and cancellation</strong></summary>
+<summary><strong>📥 Optional standalone Windows installer — installation, completion and cancellation</strong></summary>
 
 For a release that provides a matching standalone download, open its Windows `-setup.exe`.
 Installation starts immediately for the current user. It creates a Start Menu entry and does
@@ -252,9 +287,9 @@ Saved connection data and credentials are separate from the application installa
 </details>
 
 <details>
-<summary><strong>Full desktop tutorial: create, test and use a connection — 29 screenshots</strong></summary>
+<summary><strong>📸 Full desktop tutorial — create, test and use a connection (29 screenshots)</strong></summary>
 
-### 1. Start the application
+### 1️⃣ Start the application
 
 Run `azauthlib-app` in your Python environment, or open the installed standalone application.
 The splash screen prepares the interface; it does not sign you in to Microsoft.
@@ -266,7 +301,7 @@ previews; selecting them does not enable their Connections pages.
 
 <p><img src="https://raw.githubusercontent.com/doydl-technologies/azauthlib/main/assets/png/tutorial-02-main-menu.png" alt="02 — Home page with Microsoft Graph selected" width="800"></p>
 
-### 2. Add your first connection
+### 2️⃣ Add your first connection
 
 Connections lists saved profiles on the left and shows the selected profile's details on the
 right. **Viewing a profile and setting it active are different actions.** A fresh installation
@@ -286,15 +321,15 @@ Testing is optional and is available after the settings have been saved.
 
 <p><img src="https://raw.githubusercontent.com/doydl-technologies/azauthlib/main/assets/png/tutorial-14-add-interactive.png" alt="14 — Adding an Interactive connection with placeholder identifiers" width="800"></p>
 
-### 3. Use another authentication method when needed
+### 3️⃣ Choose another authentication method when needed
 
-**Device code:** use the same registration identifiers with a registration configured for
+**📱 Device code:** use the same registration identifiers with a registration configured for
 public-client/device-code authentication. A test or your Python code will later provide a
 short code to enter on Microsoft's sign-in page.
 
 <p><img src="https://raw.githubusercontent.com/doydl-technologies/azauthlib/main/assets/png/tutorial-15-add-device-code.png" alt="15 — Adding a Device code connection" width="800"></p>
 
-**Client secret:** use an application registration configured for app-only access. Supply the
+**🔐 Client secret:** use an application registration configured for app-only access. Supply the
 client secret's **value**, not the secret ID. Saving stores the secret in the operating-system
 credential manager; it is not written into the public profile settings. No user browser sign-in
 is expected for this method. Application permissions and administrator consent must already
@@ -302,7 +337,7 @@ be configured for the work the app will perform.
 
 <p><img src="https://raw.githubusercontent.com/doydl-technologies/azauthlib/main/assets/png/tutorial-16-add-client-secret.png" alt="16 — Adding an app-only connection with a client secret" width="800"></p>
 
-**PFX/P12 certificate:** choose the certificate method and the PFX/P12 format, then browse to
+**📜 PFX/P12 certificate:** choose the certificate method and the PFX/P12 format, then browse to
 the local bundle containing the private key and certificate.
 
 <p><img src="https://raw.githubusercontent.com/doydl-technologies/azauthlib/main/assets/png/tutorial-17-add-certificate-pfx.png" alt="17 — Certificate connection using a PFX or P12 bundle" width="800"></p>
@@ -313,7 +348,7 @@ locally and save. An encrypted key needs its password again later if it has not 
 
 <p><img src="https://raw.githubusercontent.com/doydl-technologies/azauthlib/main/assets/png/tutorial-27-add-certificate-pfx-lower-fields.png" alt="27 — PFX password, password-storage and local-validation fields" width="800"></p>
 
-**PEM certificate:** choose the PEM format and select both the private-key file and its matching
+**📜 PEM certificate:** choose the PEM format and select both the private-key file and its matching
 public certificate. The certificate may be PEM or DER as described in the form.
 
 <p><img src="https://raw.githubusercontent.com/doydl-technologies/azauthlib/main/assets/png/tutorial-18-add-certificate-pem.png" alt="18 — Certificate connection using a PEM private key and public certificate" width="800"></p>
@@ -332,7 +367,7 @@ for validation, storage, Python examples and renewal.
 
 <p><img src="https://raw.githubusercontent.com/doydl-technologies/azauthlib/main/assets/png/tutorial-19-create-certificate-dialog.png" alt="19 — Creating an encrypted certificate locally" width="800"></p>
 
-### 4. Test the saved connection
+### 4️⃣ Test the saved connection
 
 Select the saved profile and choose **Test connection**. The status area shows progress and
 provides **Cancel test**. For Interactive and Device code, be ready to complete Microsoft
@@ -367,7 +402,7 @@ the desktop `http://localhost` redirect URI. Correct the saved settings and try 
 
 <p><img src="https://raw.githubusercontent.com/doydl-technologies/azauthlib/main/assets/png/tutorial-24-connection-failed-demo.png" alt="24 — Simulated failed connection-test result" width="800"></p>
 
-### 5. Manage saved connections
+### 5️⃣ Manage saved connections
 
 Choose **Edit** to change the selected profile. Save the changes when finished. Changing
 credentials resets its recorded test status; changing only the name does not.
@@ -396,7 +431,7 @@ draft. Discarding a draft keeps the saved connection as it was.
 
 <p><img src="https://raw.githubusercontent.com/doydl-technologies/azauthlib/main/assets/png/tutorial-20-discard-confirmation.png" alt="20 — Confirming whether to discard unsaved edits" width="800"></p>
 
-### 6. Adjust preferences
+### 6️⃣ Adjust preferences
 
 Open the gear control to view **Settings**. Appearance includes the accent color, information
 buttons and service-selection animation. The preview lets you inspect a draft before choosing
@@ -411,7 +446,7 @@ are currently unavailable. See [Startup preferences](docs/startup-behavior.md) f
 
 <p><img src="https://raw.githubusercontent.com/doydl-technologies/azauthlib/main/assets/png/tutorial-08-settings-advanced.png" alt="08 — Advanced startup preferences" width="800"></p>
 
-### 7. Use help, shortcuts and policy drawers
+### 7️⃣ Use help, shortcuts and policy drawers
 
 The shortcut information drawer explains the local launcher. A shortcut created from the
 Python-based app depends on that Python environment remaining installed. The standalone
@@ -433,7 +468,9 @@ application does not need to remain open while your script uses its saved profil
 
 </details>
 
-## Use your saved connection in Python
+<a id="use-your-saved-connection-in-python"></a>
+
+## 🐍 Use your saved connection in Python
 
 This example uses an **Interactive** profile named `Work account`, configured with delegated
 `User.Read` permission. Replace the profile name if you chose another one. The first run may
@@ -461,7 +498,8 @@ response.raise_for_status()
 print(response.json().get("displayName", "Signed in"))
 ```
 
-azauthlib obtains the token; `requests` makes the Graph call. Do not print or share the token.
+> [!IMPORTANT]
+> **🔒 Token safety:** azauthlib obtains the token; `requests` makes the Graph call. Do not print or share the token.
 Microsoft Graph's [`/me` endpoint](https://learn.microsoft.com/en-us/graph/api/user-get?view=graph-rest-1.0)
 requires a signed-in user and delegated permissions. For app-only profiles, call
 `auth.ClientCredentials()` and choose an API operation and application permissions appropriate
@@ -471,7 +509,9 @@ A profile does not hard-code which authentication method your program calls: exp
 the method that matches the profile's credential type and your intended sign-in experience.
 For setup entirely in Python, the following examples avoid needing the desktop at all.
 
-## Public-client authentication
+<a id="public-client-authentication"></a>
+
+## 👤 Public-client authentication
 
 ```python
 from azauthlib import Authentication, InteractionRequiredError
@@ -494,7 +534,9 @@ print(result["token_source"])
 Silent authentication does not unexpectedly launch a browser. Pass
 `fallback_to_interactive=True` if that behavior is explicitly desired.
 
-## Device-code authentication
+<a id="device-code-authentication"></a>
+
+## 📱 Device-code authentication
 
 ```python
 from azauthlib import Authentication
@@ -506,7 +548,9 @@ result = auth.DeviceCodeFlow(webbrowser_enabled=True)
 
 MSAL controls polling and expiration. The method blocks until authentication completes or fails.
 
-## Client-credentials authentication
+<a id="client-credentials-authentication"></a>
+
+## 🤖 Client-credentials authentication
 
 Microsoft requires the `/.default` resource scope for client credentials:
 
@@ -528,7 +572,11 @@ result = auth.ClientCredentials()
 Set these environment variables before running the example; see [Configuration](#configuration).
 [Certificate authentication](docs/certificate-authentication.md) is also available for app-only access.
 
-## Configuration
+<a id="configuration"></a>
+
+## ⚙️ Configuration
+
+### 🌱 Environment variables
 
 Environment variables are supported:
 
@@ -556,6 +604,8 @@ configuration directory. Client secrets go to the operating-system keyring, neve
 azauthlib-app
 ```
 
+### 🗂️ Saved connection profiles
+
 The application supports named profiles for multiple Microsoft Entra app registrations.
 After the splash screen, choose Microsoft Graph on the Home page to open the Connections
 Manager. Add, edit, optionally test, remove, and set the active connection there. Other service
@@ -565,6 +615,8 @@ and where to find your Entra app registration's Tenant/Directory ID, Client/Appl
 and client secret. The active info button is dimmed and disabled while its topic is open.
 Close the shelf with its close button, Got it, or Escape, or select another topic.
 
+### 🧪 Connection-test history
+
 The Test connection icon is blue for untested saved credentials, green for the last successful
 test, and red for the last failed test. Changing credentials resets the indicator; renaming a
 connection does not. Canceling a retest preserves the previous completed result. This is test
@@ -572,6 +624,8 @@ history, not a guarantee that authentication or every Microsoft Graph operation 
 History stores only outcomes and signed, opaque credential fingerprints, with its signing key
 in the OS credential manager. Tests do not persist tokens or client secrets. When history storage
 is unavailable, results are kept for the current session only.
+### 🔐 Profile storage and isolation
+
 The `Default` profile uses `.env` and `msal-cache.bin` directly in the current configuration
 and cache directories. Every additional profile receives its own public configuration file
 and encrypted MSAL token cache; client secrets
@@ -598,7 +652,9 @@ auth.Build.Default()
 
 Passing `profile=` avoids depending on whichever profile is currently selected in the GUI.
 
-## Upgrading from 1.4.0b1
+<a id="upgrading-from-140b1"></a>
+
+## 🔄 Upgrading from 1.4.0b1
 
 On Windows, the default configuration and cache directories no longer include the additional
 vendor directory. Existing settings are not automatically migrated. To upgrade safely:
@@ -625,10 +681,15 @@ profiles have been removed, create a profile before constructing an authenticati
 Removing a profile archives its known local files; it does not revoke issued tokens or erase
 shared client secrets from the keyring.
 
-## Token-cache security
+<a id="token-cache-security"></a>
+
+## 🛡️ Token-cache security
 
 Encrypted persistence is the default and fails closed when the OS encryption provider is
 unavailable. On Linux, ensure an appropriate Secret Service/LibSecret backend is configured.
+
+> [!WARNING]
+> **⚠️ Plaintext cache is less secure.** Only use it when file permissions and the threat model have been independently reviewed.
 
 Plaintext fallback requires an explicit opt-in:
 
@@ -636,41 +697,45 @@ Plaintext fallback requires an explicit opt-in:
 auth = Authentication(allow_plaintext_cache=True)
 ```
 
-Only use that option when file permissions and the threat model have been independently reviewed.
+<a id="error-handling"></a>
 
-## Error handling
+## 🚨 Error handling
 
 Authentication methods return the successful MSAL result dictionary. Failures raise:
 
-- `AuthenticationError` for identity platform or protocol errors.
-- `InteractionRequiredError` when silent authentication cannot continue.
-- `TokenCacheSecurityError` when secure persistence cannot be established.
+- 🔑 `AuthenticationError` for identity platform or protocol errors.
+- 👤 `InteractionRequiredError` when silent authentication cannot continue.
+- 🛡️ `TokenCacheSecurityError` when secure persistence cannot be established.
 
 Error logs include error codes and correlation IDs, not full response dictionaries or tokens.
 
-## Common setup problems
+<a id="common-setup-problems"></a>
+
+## 🧩 Common setup problems
 
 | Symptom | What to check |
 | --- | --- |
-| `azauthlib-app` is not found | Activate the environment where you installed the package. Try `python -m azauthlib.gui.launch` using that environment's Python. |
-| PowerShell cannot activate the environment | You can use `.\.venv\Scripts\python.exe -m pip install azauthlib` and `.\.venv\Scripts\azauthlib-app.exe` directly without changing execution policy. |
-| A provider's Open button is unavailable | The desktop currently supports Microsoft Graph; other provider cards are previews. |
-| Interactive sign-in cannot finish | Check the tenant/account type and the registration's desktop `http://localhost` redirect URI. Your organization's sign-in and consent policies also apply. |
-| Device-code sign-in is rejected | Check public-client/device-code configuration and whether organization policy permits that flow. Use a new code if the current one expired. |
-| A secret/certificate profile cannot authenticate | Check credential expiry, the secret **value**, the tenant-specific registration and the public certificate uploaded to Entra. |
-| Authentication passes but a Graph request returns 403 | Check that the token's delegated/application permission type and consent match the API operation. A successful connection test does not grant additional access. |
-| `/me` fails with an app-only connection | Use a user sign-in for `/me`, or choose an app-only-supported endpoint with the appropriate application permissions. |
-| Python requests sign-in after a successful GUI test | GUI tests use a temporary token cache. Your Python session creates/reuses its own persisted authentication cache. |
-| Saved certificate files cannot be found | Keep the private key and certificate at the configured local paths, or edit the connection and validate the new paths. |
-| Secure token storage is unavailable | Check the OS credential/encryption backend. Linux needs a working Secret Service/LibSecret setup; see [Token-cache security](#token-cache-security). |
-| The standalone download is unavailable | The selected GitHub release must provide desktop assets for your platform. Upgrade the library and run `azauthlib-install-desktop --check` to check the matching download. |
+| 🖥️ `azauthlib-app` is not found | Activate the environment where you installed the package. Try `python -m azauthlib.gui.launch` using that environment's Python. |
+| 💻 PowerShell cannot activate the environment | You can use `.\.venv\Scripts\python.exe -m pip install azauthlib` and `.\.venv\Scripts\azauthlib-app.exe` directly without changing execution policy. |
+| 🧭 A provider's Open button is unavailable | The desktop currently supports Microsoft Graph; other provider cards are previews. |
+| 👤 Interactive sign-in cannot finish | Check the tenant/account type and the registration's desktop `http://localhost` redirect URI. Your organization's sign-in and consent policies also apply. |
+| 📱 Device-code sign-in is rejected | Check public-client/device-code configuration and whether organization policy permits that flow. Use a new code if the current one expired. |
+| 🔐 A secret/certificate profile cannot authenticate | Check credential expiry, the secret **value**, the tenant-specific registration and the public certificate uploaded to Entra. |
+| 🚫 Authentication passes but a Graph request returns 403 | Check that the token's delegated/application permission type and consent match the API operation. A successful connection test does not grant additional access. |
+| 🤖 `/me` fails with an app-only connection | Use a user sign-in for `/me`, or choose an app-only-supported endpoint with the appropriate application permissions. |
+| 🔄 Python requests sign-in after a successful GUI test | GUI tests use a temporary token cache. Your Python session creates/reuses its own persisted authentication cache. |
+| 📜 Saved certificate files cannot be found | Keep the private key and certificate at the configured local paths, or edit the connection and validate the new paths. |
+| 🛡️ Secure token storage is unavailable | Check the OS credential/encryption backend. Linux needs a working Secret Service/LibSecret setup; see [Token-cache security](#token-cache-security). |
+| 📦 The standalone download is unavailable | The selected GitHub release must provide desktop assets for your platform. Upgrade the library and run `azauthlib-install-desktop --check` to check the matching download. |
 
 For help, use the app's information drawers and the [issue tracker](https://github.com/doydl-technologies/azauthlib/issues).
 Include the app/library version, operating system, authentication method and sanitized error
 code or correlation ID. Keep access tokens, secret values, passwords and private-key files
 out of issue reports. Follow [SECURITY.md](SECURITY.md) for security reports.
 
-## Development
+<a id="development"></a>
+
+## 👩‍💻 Development
 
 ```bash
 python -m pip install -e ".[dev]"
@@ -689,7 +754,9 @@ See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), and
 The [tutorial screenshot index](assets/html/tutorial-index.html) can be opened locally
 after cloning the repository. Its screenshots are documentation assets, not installed runtime files.
 
-## License
+<a id="license"></a>
+
+## ⚖️ License
 
 Apache License 2.0. Microsoft, Azure, Entra, and Microsoft Graph are trademarks of Microsoft and
 are not affiliated with or endorsed by this project.
