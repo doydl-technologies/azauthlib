@@ -36,7 +36,7 @@ from msal import ConfidentialClientApplication, PublicClientApplication, TokenCa
 from PySide6.QtCore import Property, QObject, QTimer, QUrl, Signal, Slot
 from PySide6.QtGui import QGuiApplication
 
-from ..certificates import CertificateError, import_certificate
+from ..certificates import CertificateError, create_certificate_client
 from ..credentials import (
     AUTH_METHODS,
     KEYRING_SERVICE,
@@ -157,8 +157,9 @@ def test_saved_connection(values: dict, cancel: Event, device_callback) -> tuple
                     client_id=values["client_id"],
                     tenant_id=values["tenant_id"],
                 )
-            imported = import_certificate(spec, password)
-            app = ConfidentialClientApplication(client_credential=imported.credential, **options)
+            app = create_certificate_client(
+                ConfidentialClientApplication, spec, password, **options
+            )
             result = app.acquire_token_for_client(scopes=_GRAPH_SCOPE)
         elif values["auth_method"] == "client_credentials":
             secret = (

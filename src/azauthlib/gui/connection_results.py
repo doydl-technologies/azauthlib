@@ -33,7 +33,7 @@ from contextlib import suppress
 
 from .. import credentials, profiles
 from ..appdata import ensure_private_directory
-from ..certificates import CertificateError, file_identity
+from ..certificates import CertificateError, certificate_identity
 
 _SERVICE = credentials.KEYRING_SERVICE + ".connection-tests"
 _ACCOUNT = "fingerprint-key"
@@ -92,11 +92,11 @@ class ConnectionResults:
         if key is None:
             return None
         secret = None
-        certificate_identity = None
+        certificate_source = None
         if values.get("auth_method") == "client_certificate":
             try:
                 spec = values.get("certificate") or {}
-                certificate_identity = [spec, file_identity(spec)]
+                certificate_source = [spec, certificate_identity(spec)]
             except CertificateError:
                 return None
         if values.get("auth_method") == "client_credentials":
@@ -116,7 +116,7 @@ class ConnectionResults:
                 values.get("auth_method"),
                 values.get("authority"),
                 secret,
-                *([certificate_identity] if certificate_identity is not None else []),
+                *([certificate_source] if certificate_source is not None else []),
             ],
             separators=(",", ":"),
             ensure_ascii=True,

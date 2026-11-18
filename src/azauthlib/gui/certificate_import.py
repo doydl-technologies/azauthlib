@@ -99,15 +99,24 @@ class CertificateImportController(QObject):
             tenant,
             no_password,
         )
-        if self._watcher.files():
-            self._watcher.removePaths(self._watcher.files())
-        self._generation += 1
-        self._prepared = None
         spec = {
             "format": format,
             "key_path": key_path.strip(),
             "certificate_path": certificate_path.strip() if format == "pem" else "",
         }
+        self._queue_validation(spec, password, remember, client, tenant, no_password)
+
+    @Slot(str, str, str, str)
+    def updateStoreDraft(self, location, thumbprint, client, tenant):
+        self._last_input = None
+        spec = {"format": "windows_store", "store_location": location, "thumbprint": thumbprint}
+        self._queue_validation(spec, "", False, client, tenant, True)
+
+    def _queue_validation(self, spec, password, remember, client, tenant, no_password):
+        if self._watcher.files():
+            self._watcher.removePaths(self._watcher.files())
+        self._generation += 1
+        self._prepared = None
         self._request = (
             self._generation,
             spec,
@@ -158,7 +167,7 @@ class CertificateImportController(QObject):
                     None if no_password else password or (saved_password if same_files else None)
                 )
                 imported = import_certificate(spec, effective_password, verify_fingerprint=False)
-                if imported.identity != file_identity(spec):
+                if spec["format"] != "windows_store" and imported.identity != file_identity(spec):
                     raise CertificateError(
                         "The selected files changed during validation. Try again."
                     )
@@ -186,7 +195,7 @@ class CertificateImportController(QObject):
                 result = {
                     "error": (
                         "Certificate validation could not complete. "
-                        "Check the selected files and secure storage."
+                        "Check the certificate source and access to its private key."
                     )
                 }
             # Keep sensitive results in Python, not in QML-visible signal payloads.
@@ -218,10 +227,12 @@ class CertificateImportController(QObject):
                 }
             else:
                 self._prepared = result
-                paths = [result["public"]["key_path"]]
-                if result["public"]["format"] == "pem":
-                    paths.append(result["public"]["certificate_path"])
-                self._watcher.addPaths(paths)
+                public = result["public"]
+                if public["format"] != "windows_store":
+                    paths = [public["key_path"]]
+                    if public["format"] == "pem":
+                        paths.append(public["certificate_path"])
+                    self._watcher.addPaths(paths)
                 self._state = {
                     "valid": True,
                     "busy": False,

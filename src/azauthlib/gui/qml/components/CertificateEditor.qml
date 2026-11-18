@@ -20,8 +20,12 @@ ColumnLayout {
     readonly property bool changed: validation.changed === true
     readonly property var summary: editing ? validation : manager.editor.certificate || ({})
     readonly property bool summaryVisible: !!summary.fingerprint
+    readonly property bool storeSelected: formatBox.currentIndex === 2
+    readonly property bool showStoreOption: Qt.platform.os === "windows" ||
+        (manager.editor.certificate || {}).format === "windows_store"
     readonly property bool modalOpen: creationDialog.visible || fileDialog.visible || formatBox.popup.visible ||
-        keyField.menuVisible || publicField.menuVisible || passwordField.menuVisible
+        keyField.menuVisible || publicField.menuVisible || passwordField.menuVisible ||
+        storeBox.popup.visible || thumbprintField.menuVisible
     signal edited()
     signal helpRequested(string topic, var trigger)
     signal helpDismissRequested()
@@ -29,14 +33,22 @@ ColumnLayout {
 
     function validate() {
         if (synchronizing || !visible || !editing) return
-        manager.certificateImport.updateDraft(formatBox.currentIndex === 0 ? "pfx" : "pem",
-            keyField.text, publicField.text, passwordField.text, rememberBox.checked, clientId, tenantId, noPasswordBox.checked)
+        if (storeSelected) {
+            manager.certificateImport.updateStoreDraft(storeBox.currentIndex === 1 ? "LocalMachine" : "CurrentUser",
+                thumbprintField.text, clientId, tenantId)
+        } else {
+            manager.certificateImport.updateDraft(formatBox.currentIndex === 0 ? "pfx" : "pem",
+                keyField.text, publicField.text, passwordField.text, rememberBox.checked, clientId, tenantId, noPasswordBox.checked)
+        }
         edited()
     }
     function synchronize(spec) {
         if (spec.key_path !== generatedFiles.key_path) generatedFiles = ({})
         synchronizing = true
-        formatBox.currentIndex = spec.format === "pem" ? 1 : 0
+        formatBox.currentIndex = spec.format === "windows_store" && showStoreOption ? 2 :
+            spec.format === "pem" ? 1 : 0
+        storeBox.currentIndex = spec.store_location === "LocalMachine" ? 1 : 0
+        thumbprintField.text = spec.thumbprint || ""
         keyField.text = spec.key_path || ""
         publicField.text = spec.certificate_path || ""
         passwordField.text = ""
@@ -48,6 +60,8 @@ ColumnLayout {
     }
     function dismissInteractions() {
         formatBox.popup.close()
+        storeBox.popup.close()
+        thumbprintField.dismissInteractions()
         keyField.dismissInteractions(); publicField.dismissInteractions(); passwordField.dismissInteractions()
         fileDialog.close()
         creationDialog.close()
@@ -76,25 +90,28 @@ ColumnLayout {
             id: formatBox
             objectName: "managerCertificateFormat"
             Layout.preferredWidth: 210; Layout.preferredHeight: 37
-            model: ["PFX / P12 (recommended)", "PEM key + public certificate"]
+            model: root.showStoreOption ? ["PFX / P12 (recommended)", "PEM key + public certificate", "Windows certificate store"] :
+                ["PFX / P12 (recommended)", "PEM key + public certificate"]
             enabled: root.editing
             onActivated: root.validate()
             onCurrentIndexChanged: {
                 if (!root.synchronizing &&
                     ((currentIndex !== 0 && root.helpTopic === "certificateFile") ||
-                     (currentIndex !== 1 && ["privateKeyFile", "publicCertificate"].includes(root.helpTopic))))
+                     (currentIndex !== 1 && ["privateKeyFile", "publicCertificate"].includes(root.helpTopic)) ||
+                     (currentIndex === 2 && root.helpTopic === "certificatePassword")))
                     root.helpDismissRequested()
             }
         }
     }
     ConnectionButton {
         objectName: "managerCreateCertificateButton"
-        visible: root.editing
+        visible: root.editing && !root.storeSelected
         text: "Create certificate..."; variant: "secondary"
         enabled: root.editing && !root.manager.testing
         onClicked: creationDialog.open()
     }
     RowLayout {
+        visible: !root.storeSelected
         Layout.fillWidth: true; spacing: 8
         ConnectionField {
             id: keyField
@@ -133,10 +150,37 @@ ColumnLayout {
             onClicked: { fileDialog.publicFile = true; fileDialog.open() }
         }
     }
+    RowLayout {
+        visible: root.storeSelected
+        Layout.fillWidth: true
+        Text {
+            text: "Personal certificate store"; color: "#c1d5ec"
+            font.family: ConnectionTheme.body; font.pixelSize: 11; font.weight: Font.ExtraBold
+        }
+        Item { Layout.fillWidth: true }
+        ConnectionCombo {
+            id: storeBox
+            objectName: "managerCertificateStoreLocation"
+            Layout.preferredWidth: 210; Layout.preferredHeight: 37
+            model: ["Current User", "Local Machine"]
+            enabled: root.editing
+            onActivated: root.validate()
+        }
+    }
+    ConnectionField {
+        id: thumbprintField
+        objectName: "managerCertificateThumbprint"
+        Layout.fillWidth: true
+        visible: root.storeSelected
+        label: "Windows certificate thumbprint"
+        readOnly: !root.editing
+        placeholderText: "Paste the 40-digit thumbprint from Windows"
+        onEdited: root.validate()
+    }
     ConnectionField {
         id: passwordField
         objectName: "managerCertificatePasswordField"
-        Layout.fillWidth: true; visible: root.editing
+        Layout.fillWidth: true; visible: root.editing && !root.storeSelected
         label: "Private-key password"; password: true; readOnly: !root.editing || noPasswordBox.checked
         placeholderText: root.manager.editor.certificate && root.manager.editor.certificate.password_ref ?
             "Leave blank to retain the saved password for the same files and app" : "Enter password, or leave blank for an unencrypted key"
@@ -149,7 +193,7 @@ ColumnLayout {
         id: rememberBox
         Layout.fillWidth: true
         objectName: "managerRememberCertificatePassword"
-        visible: root.editing
+        visible: root.editing && !root.storeSelected
         enabled: !noPasswordBox.checked
         text: "Remember password securely for this connection"
         palette.windowText: ConnectionTheme.text
@@ -176,7 +220,7 @@ ColumnLayout {
         id: noPasswordBox
         Layout.fillWidth: true
         objectName: "managerCertificateNoPassword"
-        visible: root.editing
+        visible: root.editing && !root.storeSelected
         text: "This file has no password (do not reuse a saved password)"
         font.family: ConnectionTheme.body; font.pixelSize: 11
         spacing: 8; leftPadding: 0
@@ -198,7 +242,8 @@ ColumnLayout {
         Layout.fillWidth: true
         visible: !root.summaryVisible || (root.editing && (!root.validation.valid || root.validation.busy))
         text: root.editing ? root.validation.message || "Choose certificate files to validate." :
-            "Certificate files are referenced locally. Choose Edit to replace or unlock them."
+            root.storeSelected ? "Windows manages the private key for this connection." :
+                "Certificate files are referenced locally. Choose Edit to replace or unlock them."
         textFormat: Text.PlainText; wrapMode: Text.Wrap
         color: root.editing && !root.validation.valid && !root.validation.busy ? "#ff889e" : ConnectionTheme.muted
         font.family: ConnectionTheme.body; font.pixelSize: 11

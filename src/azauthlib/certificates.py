@@ -33,6 +33,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives.serialization import pkcs12
 
 MAX_CERTIFICATE_BYTES = 4 * 1024 * 1024
+CERTIFICATE_FORMATS = ("pfx", "pem", "windows_store")
 
 
 class CertificateError(ValueError):
@@ -63,6 +64,15 @@ def file_identity(spec):
     return [hashlib.sha256(read_certificate_file(path)).hexdigest() for path in paths]
 
 
+def certificate_identity(spec):
+    """Identify the current certificate source for connection-test history."""
+    if spec.get("format") == "windows_store":
+        from .windows_certificates import store_certificate_identity
+
+        return store_certificate_identity(spec)
+    return file_identity(spec)
+
+
 @dataclass(repr=False)
 class ImportedCertificate:
     public: dict
@@ -71,13 +81,20 @@ class ImportedCertificate:
 
 
 def import_certificate(spec, password=None, *, verify_fingerprint=True):
-    """Validate PFX/P12 or PEM+certificate, returning a SHA-256-ready MSAL credential.
+    """Validate a certificate source and return public metadata and its identity.
 
     The unencrypted key is serialized only in memory. No subprocesses, temporary
-    key files, certificate-store imports, or network access are involved.
+    key files, store writes, or network access are involved.
     """
-    if not isinstance(spec, dict) or spec.get("format") not in ("pfx", "pem"):
-        raise CertificateError("Choose PFX/P12 or PEM certificate format.")
+    if not isinstance(spec, dict) or spec.get("format") not in CERTIFICATE_FORMATS:
+        raise CertificateError("Choose PFX/P12, PEM, or Windows certificate store.")
+    if spec["format"] == "windows_store":
+        from .windows_certificates import validate_store_certificate
+
+        if password:
+            raise CertificateError("Windows manages access to this key; omit the file password.")
+        public = validate_store_certificate(spec, verify_fingerprint=verify_fingerprint)
+        return ImportedCertificate(public, {}, [public["fingerprint"]])
     data = read_certificate_file(spec.get("key_path", ""))
     identities = [hashlib.sha256(data).hexdigest()]
     encoded_password = password.encode("utf-8") if password else None
@@ -112,6 +129,39 @@ def import_certificate(spec, password=None, *, verify_fingerprint=True):
         encoding, public_format
     ) != certificate.public_key().public_bytes(encoding, public_format):
         raise CertificateError("The private key does not match the selected public certificate.")
+    metadata = certificate_metadata(certificate)
+    if (
+        verify_fingerprint
+        and spec.get("fingerprint")
+        and spec["fingerprint"] != metadata["fingerprint"]
+    ):
+        raise CertificateError(
+            "The certificate file has changed. Edit and validate this connection again."
+        )
+    public = {
+        "format": spec["format"],
+        "key_path": str(Path(spec["key_path"]).expanduser().resolve()),
+        "certificate_path": str(Path(spec["certificate_path"]).expanduser().resolve())
+        if spec["format"] == "pem"
+        else "",
+        **metadata,
+    }
+    credential = {
+        "private_key": key.private_bytes(
+            serialization.Encoding.PEM,
+            serialization.PrivateFormat.PKCS8,
+            serialization.NoEncryption(),
+        ).decode("ascii"),
+        # MSAL >=1.35 derives SHA-256 automatically; do not supply SHA-1 thumbprint.
+        "public_certificate": certificate.public_bytes(serialization.Encoding.PEM).decode("ascii"),
+    }
+    return ImportedCertificate(public, credential, identities)
+
+
+def certificate_metadata(certificate):
+    key = certificate.public_key()
+    if not isinstance(key, rsa.RSAPublicKey) or key.key_size < 2048:
+        raise CertificateError("Use an RSA private key of at least 2048 bits for Microsoft Entra.")
     now = datetime.now(timezone.utc)
     if now < certificate.not_valid_before_utc:
         raise CertificateError(
@@ -126,28 +176,28 @@ def import_certificate(spec, password=None, *, verify_fingerprint=True):
             raise CertificateError("This certificate does not allow digital signatures.")
     except x509.ExtensionNotFound:
         pass
-    fingerprint = certificate.fingerprint(hashes.SHA256()).hex().upper()
-    if verify_fingerprint and spec.get("fingerprint") and spec["fingerprint"] != fingerprint:
-        raise CertificateError(
-            "The certificate file has changed. Edit and validate this connection again."
-        )
-    public = {
-        "format": spec["format"],
-        "key_path": str(Path(spec["key_path"]).expanduser().resolve()),
-        "certificate_path": str(Path(spec["certificate_path"]).expanduser().resolve())
-        if spec["format"] == "pem"
-        else "",
-        "fingerprint": fingerprint,
+    return {
+        "fingerprint": certificate.fingerprint(hashes.SHA256()).hex().upper(),
         "subject": certificate.subject.rfc4514_string(),
         "not_after": certificate.not_valid_after_utc.isoformat(),
     }
-    credential = {
-        "private_key": key.private_bytes(
-            serialization.Encoding.PEM,
-            serialization.PrivateFormat.PKCS8,
-            serialization.NoEncryption(),
-        ).decode("ascii"),
-        # MSAL >=1.35 derives SHA-256 automatically; do not supply SHA-1 thumbprint.
-        "public_certificate": certificate.public_bytes(serialization.Encoding.PEM).decode("ascii"),
-    }
-    return ImportedCertificate(public, credential, identities)
+
+
+def create_certificate_client(factory, spec, password, **options):
+    """Supply MSAL with either a file credential or a fresh Windows-signed assertion."""
+    if not spec or spec.get("format") != "windows_store":
+        return factory(client_credential=import_certificate(spec, password).credential, **options)
+
+    from .windows_certificates import require_windows, sign_client_assertion
+
+    require_windows()
+    if password:
+        raise CertificateError("Windows manages access to this key; omit the file password.")
+
+    # Bind the assertion to the token endpoint discovered by MSAL, including tenant aliases.
+    def assertion():
+        return sign_client_assertion(spec, options["client_id"], app.authority.token_endpoint)
+
+    # A no-argument callback cannot switch audiences for regional token requests.
+    app = factory(client_credential={"client_assertion": assertion}, azure_region=False, **options)
+    return app

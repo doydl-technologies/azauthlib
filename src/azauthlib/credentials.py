@@ -36,11 +36,21 @@ from dotenv import dotenv_values
 
 from ._configure import get_settings
 from .appdata import ensure_private_directory
-from .certificates import ImportedCertificate, import_certificate
+from .certificates import CERTIFICATE_FORMATS, ImportedCertificate, import_certificate
 
 KEYRING_SERVICE = "azauthlib"
 AUTH_METHODS = frozenset({"interactive", "device_code", "client_credentials", "client_certificate"})
 CERTIFICATE_SERVICE = KEYRING_SERVICE + ".certificate-passwords"
+_CERTIFICATE_FIELDS = {
+    "format",
+    "key_path",
+    "certificate_path",
+    "store_location",
+    "thumbprint",
+    "fingerprint",
+    "subject",
+    "not_after",
+}
 
 
 def _certificate_config(values):
@@ -49,18 +59,9 @@ def _certificate_config(values):
         return None
     try:
         spec = json.loads(base64.b64decode(encoded, validate=True))
-        allowed = {
-            "format",
-            "key_path",
-            "certificate_path",
-            "fingerprint",
-            "subject",
-            "not_after",
-            "password_ref",
-        }
         if (
             not isinstance(spec, dict)
-            or set(spec) - allowed
+            or set(spec) - (_CERTIFICATE_FIELDS | {"password_ref"})
             or not all(isinstance(v, str) for v in spec.values())
         ):
             raise ValueError
@@ -76,7 +77,7 @@ def _certificate_account(target, client_id, tenant_id):
 
 def certificate_password(spec, *, path=None, profile=None, client_id=None, tenant_id=None):
     """Resolve a password only within this profile/application credential namespace."""
-    if not spec or not spec.get("password_ref"):
+    if not spec or spec.get("format") == "windows_store" or not spec.get("password_ref"):
         return None
     target = Path(path or get_settings(profile).env_path).expanduser().resolve()
     prefix = _certificate_account(target, client_id, tenant_id)
@@ -215,13 +216,16 @@ def save_configuration(
             certificate = certificate.public
         else:
             certificate = import_certificate(certificate, certificate_password_value).public
-        if not certificate or certificate.get("format") not in ("pfx", "pem"):
-            raise ValueError("A validated PFX/P12 or PEM certificate is required")
-        allowed = {"format", "key_path", "certificate_path", "fingerprint", "subject", "not_after"}
-        certificate = {k: v for k, v in certificate.items() if k in allowed}
+        if not certificate or certificate.get("format") not in CERTIFICATE_FORMATS:
+            raise ValueError("A validated certificate is required")
+        certificate = {k: v for k, v in certificate.items() if k in _CERTIFICATE_FIELDS}
         if not all(isinstance(value, str) for value in certificate.values()):
             raise ValueError("Invalid certificate metadata")
-        if remember_certificate_password and certificate_password_value:
+        if (
+            certificate["format"] != "windows_store"
+            and remember_certificate_password
+            and certificate_password_value
+        ):
             new_reference = _certificate_account(target, client_id, tenant_id) + uuid.uuid4().hex
             try:
                 keyring.set_password(CERTIFICATE_SERVICE, new_reference, certificate_password_value)

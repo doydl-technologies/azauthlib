@@ -34,7 +34,7 @@ from dotenv import dotenv_values
 from msal import ConfidentialClientApplication, PublicClientApplication
 
 from ._configure import get_settings
-from .certificates import import_certificate
+from .certificates import create_certificate_client, import_certificate
 from .credentials import load_credentials
 from .permissions import application_scope_fmt, scope_fmt
 from .tokens import load_token_cache, resolve_token_path, tokentime_fmt
@@ -109,6 +109,17 @@ class _CredentialBuilder:
         imported = import_certificate(spec, password)
         self.auth.certificate = imported.public
         self.auth._certificate_password = password
+        return self.auth
+
+    def WithWindowsCertificate(
+        self, client_id, tenant_id, thumbprint, *, store_location="CurrentUser", authority=None
+    ):
+        """Use a certificate from the Windows Personal store and keep its key in Windows."""
+        imported = import_certificate(
+            {"format": "windows_store", "store_location": store_location, "thumbprint": thumbprint}
+        )
+        self.WithEntry(client_id, tenant_id, authority=authority)
+        self.auth.certificate = imported.public
         return self.auth
 
     def WithEntry(self, client_id, tenant_id, client_secret=None, authority=None):
@@ -311,16 +322,20 @@ class Authentication:
         requested = (
             scopes if scopes is not None else (self.scopes if self._scopes_explicit else None)
         )
-        app = ConfidentialClientApplication(
-            client_id=self.client_id,
-            authority=self.authority,
-            client_credential=(
-                import_certificate(self.certificate, self._certificate_password).credential
-                if self.certificate
-                else self.client_secret
-            ),
-            token_cache=self._cache(),
-        )
+        options = {
+            "client_id": self.client_id,
+            "authority": self.authority,
+            "token_cache": self._cache(),
+        }
+        if self.certificate:
+            app = create_certificate_client(
+                ConfidentialClientApplication,
+                self.certificate,
+                self._certificate_password,
+                **options,
+            )
+        else:
+            app = ConfidentialClientApplication(client_credential=self.client_secret, **options)
         result = app.acquire_token_for_client(scopes=application_scope_fmt(requested))
         return self._successful(
             result,

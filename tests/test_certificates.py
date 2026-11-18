@@ -21,21 +21,30 @@
 """Certificate import/authentication tests using disposable, isolated credentials."""
 
 import base64
+import ctypes
 import json
 import os
+import sys
 import time
+from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives.asymmetric import padding, rsa, utils
 from cryptography.hazmat.primitives.serialization import pkcs12
 from cryptography.x509.oid import NameOID
 
-from azauthlib import Authentication, authentication, credentials, profiles
-from azauthlib.certificates import CertificateError, file_identity, import_certificate
+from azauthlib import Authentication, authentication, credentials, profiles, windows_certificates
+from azauthlib.certificates import (
+    CertificateError,
+    certificate_identity,
+    certificate_metadata,
+    file_identity,
+    import_certificate,
+)
 
 CLIENT = "a8bf703b-a38a-4786-a4c1-96ea20531620"
 TENANT = "91273e86-781d-4a9e-b3a1-e06c74d8a043"
@@ -335,6 +344,146 @@ def test_real_msal_constructs_sha256_certificate_assertion_offline(bundle, forma
         "access_token"
     ]
     assert len(requests) == 1
+
+
+@pytest.mark.parametrize("native", [False, True], ids=["simulated-cng", "windows-personal-store"])
+def test_store_profile_signs_msal_assertion_offline(bundle, monkeypatch, native):
+    from msal import ConfidentialClientApplication, TokenCache
+
+    sha256 = hashes.SHA256()
+    pss = padding.PSS(mgf=padding.MGF1(sha256), salt_length=sha256.digest_size)
+    if native:
+        thumbprint = os.environ.get("AZAUTHLIB_TEST_STORE_THUMBPRINT")
+        if sys.platform != "win32" or not thumbprint:
+            pytest.skip(
+                "Set AZAUTHLIB_TEST_STORE_THUMBPRINT to a disposable Windows CNG certificate"
+            )
+    else:
+        thumbprint = "01" * 20
+        certificate = bundle["certificate"]()
+        metadata = {
+            "format": "windows_store",
+            "store_location": "CurrentUser",
+            "thumbprint": thumbprint,
+            **certificate_metadata(certificate),
+        }
+
+        class Cng:
+            def NCryptSignHash(self, key, info, digest, size, output, capacity, written, flags):
+                assert info._obj.algorithm == "SHA256"
+                assert info._obj.salt_size == 32
+                signature = key.sign(digest[:size], pss, utils.Prehashed(sha256))
+                assert capacity == len(signature) and flags == 0x48
+                ctypes.memmove(output, signature, len(signature))
+                written._obj.value = len(signature)
+                return 0
+
+        @contextmanager
+        def signing_key(spec, *, verify_fingerprint=True):
+            assert spec["thumbprint"] == thumbprint
+            if verify_fingerprint and spec.get("fingerprint") not in (
+                None,
+                metadata["fingerprint"],
+            ):
+                raise CertificateError("The Windows certificate has changed.")
+            yield certificate, metadata, Cng(), bundle["key"]
+
+        monkeypatch.setattr(windows_certificates, "require_windows", lambda: None)
+        monkeypatch.setattr(windows_certificates, "_open_signing_key", signing_key)
+        monkeypatch.setattr(
+            windows_certificates, "store_certificate_identity", lambda _: [metadata["fingerprint"]]
+        )
+
+    tenant_alias = "example.onmicrosoft.com"
+    auth = Authentication().Build.WithWindowsCertificate(CLIENT, tenant_alias, thumbprint)
+    spec = auth.certificate
+    assert set(spec) == {
+        "format",
+        "store_location",
+        "thumbprint",
+        "fingerprint",
+        "subject",
+        "not_after",
+    }
+    assert certificate_identity(spec) == [spec["fingerprint"]]
+    imported = import_certificate(spec)
+    assert imported.credential == {}
+    with pytest.raises(CertificateError, match="changed"):
+        import_certificate({**spec, "fingerprint": "0" * 64})
+    if native:
+        with windows_certificates._open_certificate(spec) as (certificate, *_):
+            assert certificate.fingerprint(sha256).hex().upper() == spec["fingerprint"]
+        with pytest.raises(CertificateError, match="not found"):
+            import_certificate({**spec, "thumbprint": "0" * 40})
+
+    profile = profiles.create_profile("Store certificate")
+    credentials.save_configuration(
+        profile=profile,
+        auth_method="client_certificate",
+        client_id=CLIENT,
+        tenant_id=tenant_alias,
+        certificate=spec,
+    )
+    auth = Authentication(profile=profile).Build.Default()
+    assert auth.certificate == spec and auth._certificate_password is None
+    monkeypatch.setattr(auth, "_cache", TokenCache)
+    endpoint = f"https://login.microsoftonline.com/{TENANT}/oauth2/v2.0/token"
+    seen = []
+
+    class Response:
+        status_code = 200
+        headers = {}
+
+        def __init__(self, value):
+            self.text = json.dumps(value)
+
+    class Transport:
+        def get(self, url, **_):
+            assert tenant_alias in url and "openid-configuration" in url
+            return Response(
+                {
+                    "authorization_endpoint": endpoint.removesuffix("token") + "authorize",
+                    "token_endpoint": endpoint,
+                    "issuer": f"https://login.microsoftonline.com/{TENANT}/v2.0",
+                }
+            )
+
+        def post(self, url, data=None, **_):
+            assertion = data["client_assertion"]
+            if isinstance(assertion, str):
+                assertion = assertion.encode("ascii")
+            header, claims, signature = assertion.split(b".")
+
+            def decode(value):
+                return base64.urlsafe_b64decode(value + b"=" * (-len(value) % 4))
+
+            public_key = certificate.public_key()
+            public_key.verify(decode(signature), header + b"." + claims, pss, sha256)
+            assert json.loads(decode(header)) == {
+                "alg": "PS256",
+                "typ": "JWT",
+                "x5t#S256": base64.urlsafe_b64encode(certificate.fingerprint(sha256))
+                .rstrip(b"=")
+                .decode("ascii"),
+            }
+            payload = json.loads(decode(claims))
+            assert payload["aud"] == url == endpoint
+            assert payload["iss"] == payload["sub"] == CLIENT
+            assert payload["exp"] - payload["nbf"] == 300
+            assert payload["jti"] not in seen
+            seen.append(payload["jti"])
+            return Response({"access_token": "offline-fixture", "expires_in": 3600})
+
+    monkeypatch.setattr(
+        authentication,
+        "ConfidentialClientApplication",
+        lambda **options: ConfidentialClientApplication(
+            http_client=Transport(), instance_discovery=False, **options
+        ),
+    )
+    assert auth.ClientCredentials()["access_token"] == "offline-fixture"
+    assert auth.ClientCredentials()["access_token"] == "offline-fixture"
+    assert len(seen) == 2
 
 
 def test_test_history_invalidated_by_file_replacement(bundle):
@@ -695,7 +844,7 @@ def test_cancel_palette_preserves_raised_and_pressed_states(qt_app):
     resources.close()
 
 
-def test_gui_loads_certificate_controls_and_switches_format(bundle, qt_app):
+def test_gui_loads_certificate_controls_and_switches_format(bundle, qt_app, monkeypatch):
     from PySide6.QtCore import QMetaObject, QObject
     from PySide6.QtQml import QQmlApplicationEngine
 
@@ -928,6 +1077,50 @@ def test_gui_loads_certificate_controls_and_switches_format(bundle, qt_app):
     assert not toggle.property("enabled")
     manager._busy = False
     manager.testChanged.emit()
+    if sys.platform == "win32":
+        thumbprint = "02" * 20
+        store_metadata = {
+            "format": "windows_store",
+            "store_location": "LocalMachine",
+            "thumbprint": thumbprint,
+            **certificate_metadata(bundle["certificate"]()),
+        }
+
+        def validate_store(spec, *, verify_fingerprint):
+            assert spec == {
+                "format": "windows_store",
+                "store_location": "LocalMachine",
+                "thumbprint": thumbprint,
+            }
+            assert not verify_fingerprint
+            return store_metadata
+
+        monkeypatch.setattr(windows_certificates, "validate_store_certificate", validate_store)
+        manager.beginEdit()
+        format_box = window.findChild(QObject, "managerCertificateFormat")
+        store_box = window.findChild(QObject, "managerCertificateStoreLocation")
+        thumbprint_field = window.findChild(QObject, "managerCertificateThumbprint")
+        assert format_box.property("count") == 3
+        format_box.setProperty("currentIndex", 2)
+        store_box.setProperty("currentIndex", 1)
+        thumbprint_field.setProperty("text", thumbprint)
+        QMetaObject.invokeMethod(editor, "validate")
+        wait_for(qt_app, lambda: manager.certificateImport.state.get("valid"))
+        assert thumbprint_field.property("visible")
+        assert not window.findChild(QObject, "managerCertificateKeyField").property("visible")
+        assert not window.findChild(QObject, "managerCertificatePasswordField").property("visible")
+        assert save_button.property("enabled")
+        assert manager.saveConnection(
+            "Certificate preview", TENANT, CLIENT, "", "client_certificate"
+        )
+        assert manager.editor["certificate"] == store_metadata
+        manager.beginEdit()
+        wait_for(qt_app, lambda: manager.certificateImport.state.get("valid"))
+        assert format_box.property("currentIndex") == 2
+        assert store_box.property("currentIndex") == 1
+        assert thumbprint_field.property("text") == thumbprint
+        manager.cancelEdit()
+        qt_app.processEvents()
     assert not warnings, "\n".join(warnings)
     window.setProperty("closingAllowed", True)
     window.close()

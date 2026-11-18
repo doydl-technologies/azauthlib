@@ -121,8 +121,8 @@ and credential-store behavior.
 ### Availability
 
 The setup command requires matching desktop assets on the official GitHub release.
-Version `6.0.2` provides standalone desktop downloads. Earlier releases such as `v5.0.0`
-do not include them. Upgrade the Python library to select the matching current desktop
+Standalone desktop downloads are available for releases such as `v6.0.2` and `v6.0.6`.
+Releases such as `v5.0.0` do not include them. Upgrade the Python library to select the matching current desktop
 release, or use `azauthlib-app` to open the Python-based GUI.
 An unavailable asset produces an explanation, not a partial installation or a fallback
 that pretends to be standalone.

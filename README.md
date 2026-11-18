@@ -129,7 +129,7 @@ and [permissions and consent guidance](https://learn.microsoft.com/en-us/entra/i
 - 🔑 Interactive, silent, device-code, and client-credentials authentication.
 - 🛡️ Encrypted, cross-process-safe token persistence through MSAL Extensions.
 - 🔒 Client secrets stored in the operating-system credential manager.
-- 📜 PFX/P12 and PEM certificate credentials, with GUI creation (90-day default), local validation and optional
+- 📜 PFX/P12, PEM, and Windows certificate store credentials, with GUI file creation (90-day default), local validation and optional
   profile-scoped password storage. See [Certificate authentication](docs/certificate-authentication.md).
 - 📁 Exact-path `.env` loading; no upward directory search.
 - 🔀 Delegated and application scope handling kept separate.

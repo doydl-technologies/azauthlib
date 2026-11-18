@@ -69,11 +69,11 @@ QtObject {
         },
         certificateFormat: {
             title: "Certificate format", subtitle: "Choose how your existing credential is stored", icon: "lock",
-            description: "Select the format of your certificate files, or choose Create certificate to generate a new encrypted credential. Creation defaults to 90 days and offers preset or custom validity in days. Importing an existing certificate does not change its expiration.",
-            noteTitle: "One file or two",
+            description: "Choose certificate files or, on Windows, a certificate from the Personal store. Create certificate generates a new encrypted file credential and defaults to 90 days.",
+            noteTitle: "Certificate sources",
             note: "<b>PFX / P12</b> packages the private key and public certificate together. <b>PEM</b> uses a private-key file and a separate matching public certificate. File extensions alone do not prove what a file contains.",
             section: "Choosing a format",
-            steps: ["Choose <b>PFX / P12</b> for a PKCS#12 bundle containing both the private key and certificate, or <b>PEM</b> for a private key and matching public certificate in separate files.", "Use <b>Create certificate</b> to choose a name, output format, password and expiration timeframe (90 days by default). Creation uses a new output folder and fills the import fields automatically.", "Upload only the generated public certificate to your own Entra app registration. Save the connection and test; local validation does not register the certificate or grant permissions."]
+            steps: ["Choose <b>PFX / P12</b> for a bundle or <b>PEM</b> for separate files.", "For <b>Windows certificate store</b>, choose the Personal store location and paste the thumbprint from Windows. The signing key stays in the store.", "Upload only the public certificate to your Entra app registration, then save and test the connection."]
         },
         certificateFile: {
             title: "Certificate file", subtitle: "PFX / P12 bundle containing your private key", icon: "lock",
@@ -101,7 +101,7 @@ QtObject {
         },
         certificateDetails: {
             title: "Certificate details", subtitle: "Public identity, expiration and fingerprint", icon: "info",
-            description: "This card shows public metadata from the certificate validated locally, or the metadata recorded when the connection was saved. Saved details do not mean the file or Entra registration has been rechecked.",
+            description: "This card shows public metadata from local validation or from the saved connection. Test the connection to check whether Entra accepts the certificate.",
             noteTitle: "Keep the private key private",
             note: "Upload only the <b>public certificate</b> to your Entra app registration. The private key stays on this computer. Choose <b>Edit</b> to replace certificate files or unlock an encrypted key.",
             section: "Reading the details",

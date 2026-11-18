@@ -22,15 +22,48 @@ connections remain available.
 3. Enter the application and tenant identifiers, then select a certificate format:
    - **PFX/P12:** select the bundle containing the certificate and private key.
    - **PEM:** select the private-key file and a separate public certificate in PEM or DER format.
-4. Supply the private-key password, or explicitly indicate that the imported key has
-   no password. Validate the files locally before saving.
-5. Optionally remember the password in the operating system's credential manager.
-   Otherwise, a password-protected certificate needs to be unlocked again in a later session.
-6. Save the connection. Testing authentication is optional and contacts Microsoft;
-   local file validation does not.
+   - **Windows certificate store:** select **Current User** or **Local Machine** and paste the
+     certificate's Windows thumbprint. See the Windows requirements below.
+4. For certificate files, supply the private-key password or indicate that the file has no
+   password. You can optionally remember the password in the operating system's credential
+   manager. Windows store certificates use Windows key permissions.
+5. Wait for local validation and save the connection. Use **Test connection** to check whether
+   Microsoft Entra accepts the certificate.
 
 The application checks that the key matches the certificate and displays the subject,
 expiration and SHA-256 fingerprint. A changed certificate must be validated again.
+
+## Use a certificate from the Windows Personal store
+
+Use **Certificates – Current User** (`certmgr.msc`) or **Certificates – Local Computer**
+(`certlm.msc`). Open **Personal → Certificates**, select the certificate, and copy
+**Thumbprint** on the **Details** tab. This 40-digit Windows thumbprint selects the store
+entry. azauthlib separately computes the SHA-256 fingerprint for authentication.
+
+The certificate must have a Windows CNG RSA key of at least 2048 bits. The key's provider
+must support RSA-PSS signing without an interactive prompt, and the Windows account running
+azauthlib must have permission to use it. Compatible non-exportable keys work. Keys that
+require a PIN dialog or use only a legacy CryptoAPI provider are unsupported. Register the
+public certificate with your Microsoft Entra application.
+
+From Python:
+
+```python
+from azauthlib import Authentication
+
+auth = Authentication()
+auth.Build.WithWindowsCertificate(
+    client_id="00000000-0000-0000-0000-000000000001",
+    tenant_id="00000000-0000-0000-0000-000000000002",
+    thumbprint="0123456789ABCDEF0123456789ABCDEF01234567",
+    store_location="CurrentUser",  # Or "LocalMachine"
+)
+result = auth.ClientCredentials()
+```
+
+Windows signs a fresh assertion when MSAL needs a token request. The private key stays in
+Windows, and the connection stores the location, thumbprint and public certificate metadata.
+Renew by registering the new public certificate in Entra and updating the saved thumbprint.
 
 ## Create a certificate in the app
 
@@ -75,7 +108,7 @@ to be available through the operating system's credential manager.
 
 ## Storage and renewal
 
-Profiles store local file paths and public certificate metadata, not private-key bytes.
+Profiles store certificate file paths or Windows store selectors, along with public metadata.
 Remembered passwords are scoped to the profile and application in the operating
 system's credential manager. Keep that credential backend available when using them.
 
